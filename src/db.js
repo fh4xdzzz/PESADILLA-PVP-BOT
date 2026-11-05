@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { config } from './config.js';
 import { log } from './logger.js';
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+const globalForPrisma = globalThis;
 
 export const prisma =
   globalForPrisma.prisma ??
@@ -12,11 +12,11 @@ export const prisma =
 
 if (!config.isProd) globalForPrisma.prisma = prisma;
 
-export async function connectDb(): Promise<void> {
+export async function connectDb() {
   await prisma.$connect();
   log.info('Base de datos conectada');
 }
 
-export async function disconnectDb(): Promise<void> {
+export async function disconnectDb() {
   await prisma.$disconnect();
 }

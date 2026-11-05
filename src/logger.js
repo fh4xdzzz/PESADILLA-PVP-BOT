@@ -13,8 +13,8 @@ export const logger = pino({
 });
 
 export const log = {
-  info: (obj: object | string, msg?: string) => logger.info(obj, msg),
-  warn: (obj: object | string, msg?: string) => logger.warn(obj, msg),
-  error: (obj: object | string, msg?: string) => logger.error(obj, msg),
-  debug: (obj: object | string, msg?: string) => logger.debug(obj, msg),
+  info: (obj, msg) => logger.info(obj, msg),
+  warn: (obj, msg) => logger.warn(obj, msg),
+  error: (obj, msg) => logger.error(obj, msg),
+  debug: (obj, msg) => logger.debug(obj, msg),
 };

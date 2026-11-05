@@ -1,4 +1,4 @@
-import { commandBuilders } from './commands/index.js';
+import { all } from './commands/index.js';
 import { registerCommands } from './discord/register.js';
 import { log } from './logger.js';
 

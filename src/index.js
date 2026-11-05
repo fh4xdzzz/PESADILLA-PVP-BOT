@@ -2,11 +2,12 @@ import { createClient } from './discord/client.js';
 import { registerCommands } from './discord/register.js';
 import { connectDb, disconnectDb } from './db.js';
 import { handleInteraction } from './commands/interactionHandler.js';
-import { config } from './config.js';
+import { config, validateConfig } from './config.js';
 import { log } from './logger.js';
 
 async function main() {
-  log.info('Iniciando PESADILLA PVP BOT v2...');
+  log.info('Iniciando PESADILLA PVP BOT v2 (JavaScript)...');
+  validateConfig();
   await connectDb();
 
   const client = createClient();
