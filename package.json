@@ -1,20 +1,36 @@
 {
   "name": "pesadilla-pvp-bot",
-  "version": "1.0.0",
-  "description": "Bot de Discord para controlar el servidor PESADILLA PVP en SparkedHost (Apollo Panel) e integrarse con Roblox Open Cloud",
-  "main": "src/index.js",
+  "version": "2.0.0",
+  "description": "Bot oficial de PESADILLA PVP - Discord + Roblox Open Cloud",
   "type": "module",
-  "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
-    "deploy-commands": "node src/deploy-commands.js"
-  },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "deploy-commands": "tsx src/deploy-commands.ts",
+    "test": "vitest run",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push"
   },
   "dependencies": {
+    "@discordjs/rest": "^2.4.0",
+    "@prisma/client": "^6.0.0",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",
-    "ws": "^8.18.0"
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0",
+    "ws": "^8.18.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.12",
+    "prisma": "^6.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
   }
 }

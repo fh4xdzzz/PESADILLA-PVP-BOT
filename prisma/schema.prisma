@@ -1,0 +1,331 @@
+// Esquema de base de datos - Prisma
+// SQLite en desarrollo, PostgreSQL en produccion (cambiar provider y DATABASE_URL).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Moderacion (casos unificados Discord + Roblox) ----------
+
+enum CaseType {
+  ROBLOX_BAN
+  ROBLOX_UNBAN
+  ROBLOX_WARN
+  ROBLOX_KICK
+  DISCORD_BAN
+  DISCORD_UNBAN
+  DISCORD_WARN
+  DISCORD_KICK
+  DISCORD_TIMEOUT
+  APPEAL
+  NOTE
+}
+
+enum CaseStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  REVOKED
+  APPEALED
+  CLOSED
+}
+
+model Case {
+  id           String     @id @default(cuid())
+  caseNumber   Int        @unique @default(autoincrement())
+  type         CaseType
+  status       CaseStatus @default(ACTIVE)
+  // Sujeto de la sancion: Roblox userId o Discord userId segun el tipo
+  subjectId    String
+  subjectName  String?
+  // Quien ejecuta la accion (Discord userId)
+  actorId      String
+  actorTag     String?
+  guildId      String?
+  // Motivos
+  publicReason String
+  privateNote  String?
+  evidence     String?
+  // Duracion (null = permanente)
+  durationSec  Int?
+  expiresAt    DateTime?
+  // Referencia a la restriccion real en Roblox (user_restriction path/userId)
+  robloxRestrictionId String?
+  // Propagacion a cuentas alternativas (solo admin, por defecto false)
+  propagateAlts Boolean   @default(false)
+  // Vinculo con apelacion si existe
+  appealCaseId String?
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  warns        Warn[]
+  auditLogs    AuditLog[]
+
+  @@index([subjectId, type])
+  @@index([actorId])
+  @@index([guildId, createdAt])
+  @@index([status, expiresAt])
+}
+
+model Warn {
+  id         String   @id @default(cuid())
+  caseId     String?
+  case       Case?    @relation(fields: [caseId], references: [id])
+  subjectId  String
+  subjectName String?
+  reason     String
+  actorId    String
+  createdAt  DateTime @default(now())
+
+  @@index([subjectId])
+}
+
+// ---------- Auditoria ----------
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String   // ej: roblox.ban, discord.ban, stats.edit, config.update
+  targetType String?
+  targetId   String?
+  guildId    String?
+  success    Boolean  @default(true)
+  error      String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  caseId     String?
+  case       Case?    @relation(fields: [caseId], references: [id])
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+}
+
+// ---------- Vinculacion Discord <-> Roblox ----------
+
+enum LinkMethod {
+  CODE
+  OAUTH
+}
+
+model LinkCode {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  discordUserId String
+  robloxUserId String?
+  expiresAt    DateTime
+  used         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([discordUserId])
+}
+
+model PlayerLink {
+  id            String     @id @default(cuid())
+  discordUserId String     @unique
+  robloxUserId  String     @unique
+  robloxName    String?
+  method        LinkMethod @default(CODE)
+  verifiedAt    DateTime   @default(now())
+
+  @@index([robloxUserId])
+}
+
+// ---------- Estadisticas Roblox (sincronizadas desde Open Cloud / eventos del juego) ----------
+
+model PlayerStats {
+  id               String   @id @default(cuid())
+  robloxUserId     String   @unique
+  robloxName       String?
+  kills            Int      @default(0)
+  deaths           Int      @default(0)
+  wins             Int      @default(0)
+  losses           Int      @default(0)
+  currentStreak    Int      @default(0)
+  bestStreak       Int      @default(0)
+  playtimeSeconds  Int      @default(0)
+  matchesPlayed    Int      @default(0)
+  lastMatchAt      DateTime?
+  updatedAt        DateTime @updatedAt
+
+  @@index([kills])
+  @@index([wins])
+}
+
+// Eventos crudos del juego (idempotentes por matchId+type+seq)
+model StatEvent {
+  id           String   @id @default(cuid())
+  eventKey     String   @unique // matchId:type:seq - evita duplicados
+  robloxUserId String
+  type         String   // KILL | DEATH | WIN | LOSS | MATCH_END
+  value        Int      @default(1)
+  matchId      String?
+  payload      Json?
+  createdAt    DateTime @default(now())
+
+  @@index([robloxUserId, createdAt])
+}
+
+// ---------- Codigos de canje ----------
+
+model GameCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  description String?
+  maxUses     Int?
+  uses        Int       @default(0)
+  expiresAt   DateTime?
+  active      Boolean   @default(true)
+  createdBy   String
+  createdAt   DateTime  @default(now())
+
+  @@index([active, expiresAt])
+}
+
+// ---------- Sorteos ----------
+
+enum GiveawayStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+model Giveaway {
+  id           String          @id @default(cuid())
+  guildId      String
+  channelId    String
+  messageId    String?
+  prize        String
+  winnersCount Int             @default(1)
+  hostId       String
+  endsAt       DateTime
+  status       GiveawayStatus  @default(SCHEDULED)
+  winners      Json?           // string[] discordUserIds
+  createdAt    DateTime        @default(now())
+
+  entries      GiveawayEntry[]
+
+  @@index([status, endsAt])
+}
+
+model GiveawayEntry {
+  id           String   @id @default(cuid())
+  giveawayId   String
+  giveaway     Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  discordUserId String
+  createdAt    DateTime @default(now())
+
+  @@unique([giveawayId, discordUserId])
+}
+
+// ---------- Torneos ----------
+
+enum TournamentStatus {
+  REGISTRATION
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+model Tournament {
+  id          String            @id @default(cuid())
+  guildId     String
+  name        String
+  status      TournamentStatus  @default(REGISTRATION)
+  maxPlayers  Int?
+  entryFee    String?
+  bracket     Json?             // estructura del bracket
+  createdBy   String
+  createdAt   DateTime          @default(now())
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  participants TournamentParticipant[]
+}
+
+model TournamentParticipant {
+  id           String   @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  discordUserId String?
+  robloxUserId  String?
+  ign           String?
+  seed         Int?
+  eliminated   Boolean  @default(false)
+  placement    Int?
+  createdAt    DateTime @default(now())
+
+  @@unique([tournamentId, discordUserId])
+  @@unique([tournamentId, robloxUserId])
+}
+
+// ---------- Tickets ----------
+
+enum TicketCategory {
+  REPORT_PLAYER
+  APPEAL_BAN
+  TECHNICAL
+  REWARD_CLAIM
+  GENERAL
+  CONTACT_ADMIN
+}
+
+enum TicketStatus {
+  OPEN
+  CLAIMED
+  WAITING_USER
+  CLOSED
+}
+
+model Ticket {
+  id           String         @id @default(cuid())
+  guildId      String
+  channelId    String?        // canal privado creado
+  ownerId      String         // discord userId
+  category     TicketCategory
+  subject      String
+  status       TicketStatus   @default(OPEN)
+  assigneeId   String?
+  robloxUserId String?        // si el ticket vincula a un jugador
+  priority     Int            @default(0)
+  transcript   String?        // url/id del transcript
+  createdAt    DateTime       @default(now())
+  claimedAt    DateTime?
+  closedAt     DateTime?
+  closedBy     String?
+
+  messages     TicketMessage[]
+
+  @@index([guildId, status])
+  @@index([ownerId])
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String
+  authorTag String?
+  isStaff   Boolean  @default(false)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+// ---------- Configuracion del bot ----------
+
+model BotSetting {
+  key       String   @id
+  value     String
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
