@@ -1,3 +1,4 @@
+import { ingestReport, showReports, showReportDetail, updateReport } from './reports.js';
 import { renderDashboard, renderShell } from './pro-ui.js';
 const encoder = new TextEncoder();
 function htmlEscape(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -71,7 +72,8 @@ export default {
 async fetch(request,env) {
 const u=new URL(request.url), path=u.pathname, method=request.method;
 if(path==='/api/ingest/match' && method==='POST') return handleMatchIngest(request,env);
-if(method!=='GET')return response('Método no permitido',405,{'Allow':'GET'});
+if(path==='/api/ingest/report' && method==='POST') return ingestReport(request,env);
+if(method!=='GET' && !(method==='POST' && /^\/reportes\/[a-zA-Z0-9:_-]{1,100}\/actualizar$/.test(path)))return response('Método no permitido',405,{'Allow':'GET, POST'});
 if(path==='/health')return Response.json({ok:true,service:'pesadilla-pvp-dashboard'});
 const origin=env.APP_BASE_URL;
 const missing=[];
@@ -119,6 +121,12 @@ return response(`No se pudo completar el inicio de sesión (diagnóstico: ${safe
 if(path==='/logout')return redirect('/login',secureCookie('session','',0));
 const user=await verify(cookies(request).session,env.SESSION_SECRET);
 if(!user || !env.DASHBOARD_ADMIN_IDS.split(',').map(x=>x.trim()).includes(user.id))return response(layout('Acceso',`<h1>Panel de administración</h1><p>Inicia sesión con una cuenta autorizada de Discord para gestionar PESADILLA PVP.</p><p><a class="button" href="/login">Entrar con Discord</a></p>`),401);
+if(path==='/reportes' && method==='GET')return response(await showReports(env,user,u.searchParams));
+const reportDetail=path.match(/^\/reportes\/([a-zA-Z0-9:_-]{1,100})$/);
+const reportUpdate=path.match(/^\/reportes\/([a-zA-Z0-9:_-]{1,100})\/actualizar$/);
+const sessionCookie=cookies(request).session;
+if(reportDetail && method==='GET')return response(await showReportDetail(env,user,reportDetail[1],sessionCookie));
+if(reportUpdate && method==='POST')return updateReport(request,env,user,reportUpdate[1],sessionCookie);
 if(path==='/api/summary')return Response.json({data:await stats(env),readOnly:true},{headers:{'Cache-Control':'no-store'}});
 if(!(path in titles) && !/^\/partidas\/[a-zA-Z0-9:_-]{1,100}$/.test(path))return response('No encontrado',404);
 return response(await renderDashboard(path,env,user,u.searchParams));
