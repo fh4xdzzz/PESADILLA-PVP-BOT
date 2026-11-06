@@ -104,3 +104,27 @@ CREATE TABLE IF NOT EXISTS staff_role_audit (
  granted_by TEXT,
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Discord control center options synced to the bot's existing BotSetting storage.
+CREATE TABLE IF NOT EXISTS discord_settings (
+ key TEXT PRIMARY KEY,
+ value TEXT NOT NULL,
+ updated_by TEXT NOT NULL,
+ updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+-- Pending Roblox server moderation; only ack marks an action applied.
+CREATE TABLE IF NOT EXISTS dashboard_moderation (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ roblox_user_id TEXT NOT NULL,
+ action TEXT NOT NULL CHECK(action IN ('ban','unban','kick')),
+ reason TEXT NOT NULL,
+ actor_discord_id TEXT NOT NULL,
+ status TEXT NOT NULL DEFAULT 'pending',
+ requested_at_ms INTEGER NOT NULL,
+ lease_until_ms INTEGER,
+ attempts INTEGER NOT NULL DEFAULT 0,
+ executed_server TEXT,
+ result_message TEXT,
+ updated_at_ms INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_moderation_queue ON dashboard_moderation(status,requested_at_ms);
