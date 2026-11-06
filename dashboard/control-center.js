@@ -129,6 +129,8 @@ export async function controlWrite(request,env,user,session,page){
    const target=form.get('robloxUserId'),action=form.get('action'),reason=form.get('reason')?.trim();
    if(!UID.test(target||'')||!['ban','unban','kick'].includes(action)||!reason||reason.length<5||reason.length>200||!SAFE_TEXT.test(reason))return reply({ok:false,error:'invalid_request'},400);
    if(target==='8223424925')return reply({ok:false,error:'owner_protected'},403);
+   const staff=await env.DB.prepare('SELECT role FROM staff_roles WHERE roblox_user_id=?').bind(target).first();
+   if((staff?.role==='owner'||staff?.role==='administrador')&&!ownerAllowed(env,user))return reply({ok:false,error:'staff_protected'},403);
    const since=Date.now()-60000;
    const count=await env.DB.prepare('SELECT COUNT(*) AS n FROM dashboard_moderation WHERE actor_discord_id=? AND requested_at_ms>=?').bind(user.id,since).first();
    if(Number(count?.n||0)>=5)return reply({ok:false,error:'rate_limited'},429);
@@ -158,6 +160,10 @@ export async function controlService(request,env,url){
    const server=url.searchParams.get('serverJobId');
    if(typeof server!=='string'||!/^[\w-]{1,100}$/.test(server))return reply({ok:false,error:'invalid_server'},400);
    const now=Date.now();
+   await env.DB.batch([
+    env.DB.prepare("UPDATE dashboard_moderation SET status='failed',result_message='Sin servidor que confirmara la expulsión durante 2 minutos',updated_at_ms=? WHERE action='kick' AND status='pending' AND requested_at_ms<?").bind(now,now-120000),
+    env.DB.prepare("UPDATE dashboard_moderation SET status='failed',result_message='No se pudo ejecutar tras 5 intentos',updated_at_ms=? WHERE action IN ('ban','unban') AND status='processing' AND attempts>=5 AND lease_until_ms<?").bind(now,now)
+   ]);
    const kicked=(await env.DB.prepare("SELECT id,roblox_user_id,reason,action FROM dashboard_moderation WHERE action='kick' AND status='pending' AND requested_at_ms>=? ORDER BY id ASC LIMIT 20").bind(now-120000).all()).results||[];
    const claim=await env.DB.prepare("UPDATE dashboard_moderation SET status='processing',lease_until_ms=?,attempts=attempts+1,updated_at_ms=? WHERE id=(SELECT id FROM dashboard_moderation WHERE action IN ('ban','unban') AND (status='pending' OR (status='processing' AND lease_until_ms<?)) AND attempts<5 ORDER BY id ASC LIMIT 1) RETURNING id,roblox_user_id,reason,action").bind(now+30000,now,now).first();
    return reply({ok:true,commands:[...kicked,...(claim?[claim]:[])]});
