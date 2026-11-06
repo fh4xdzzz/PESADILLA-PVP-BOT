@@ -1,8 +1,7 @@
+import { liveMatchAPI } from './live-matches.js';
 import { handleStaffAdmin } from './staff-roles.js';
-import { requestTheater, claimTheater } from './replay-theater.js';
+import { claimTheater } from './replay-theater.js';
 import { ingestReplay, readReplayForRoblox, ingestReplayEvents, readReplayEventsForRoblox } from './replay-api.js';
-import { replayPage } from './replay-view.js';
-import { replayClientSource } from './replay-client.js';
 import { ingestReport, showReports, showReportDetail, updateReport } from './reports.js';
 import { renderDashboard, renderShell } from './pro-ui.js';
 const encoder = new TextEncoder();
@@ -83,9 +82,9 @@ if((path==='/api/ingest/replay/meta'||path==='/api/ingest/replay/chunk') && meth
 if(path==='/api/ingest/replay/events' && method==='POST')return ingestReplayEvents(request,env);
 if(path==='/api/ingest/replay/events' && method==='GET')return readReplayEventsForRoblox(request,env,u);
 if(path==='/api/ingest/replay/claim' && method==='GET')return claimTheater(request,env,u);
+if(path.startsWith('/api/ingest/live/'))return liveMatchAPI(request,env,u);
 if(path.startsWith('/api/ingest/admin/'))return handleStaffAdmin(request,env,u);
-if(path==='/assets/replay-client.js' && method==='GET')return new Response(replayClientSource,{headers:{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}});
-if(method!=='GET' && !(method==='POST' && (path==='/api/ingest/replay/request'||/^\/reportes\/[a-zA-Z0-9:_-]{1,100}\/actualizar$/.test(path))))return response('Método no permitido',405,{'Allow':'GET, POST'});
+if(method!=='GET' && !(method==='POST' && /^\/reportes\/[a-zA-Z0-9:_-]{1,100}\/actualizar$/.test(path)))return response('Método no permitido',405,{'Allow':'GET, POST'});
 if(path==='/health')return Response.json({ok:true,service:'pesadilla-pvp-dashboard'});
 const origin=env.APP_BASE_URL;
 const missing=[];
@@ -133,10 +132,10 @@ return response(`No se pudo completar el inicio de sesión (diagnóstico: ${safe
 if(path==='/logout')return redirect('/login',secureCookie('session','',0));
 const user=await verify(cookies(request).session,env.SESSION_SECRET);
 if(!user || !env.DASHBOARD_ADMIN_IDS.split(',').map(x=>x.trim()).includes(user.id))return response(layout('Acceso',`<h1>Panel de administración</h1><p>Inicia sesión con una cuenta autorizada de Discord para gestionar PESADILLA PVP.</p><p><a class="button" href="/login">Entrar con Discord</a></p>`),401);
-if(path==='/api/ingest/replay/request' && method==='POST')return requestTheater(request,env,user,u);
 if(path==='/reportes' && method==='GET')return response(await showReports(env,user,u.searchParams));
+// Historical replay links now lead to match statistics; visual spectating is in Roblox only.
 const replayRoute=path.match(/^\/replays\/([A-Za-z0-9:_-]{1,100})$/);
-if(replayRoute && method==='GET')return response(await replayPage(env,user,replayRoute[1]));
+if(replayRoute && method==='GET')return redirect('/partidas/'+encodeURIComponent(replayRoute[1]));
 const reportDetail=path.match(/^\/reportes\/([a-zA-Z0-9:_-]{1,100})$/);
 const reportUpdate=path.match(/^\/reportes\/([a-zA-Z0-9:_-]{1,100})\/actualizar$/);
 const sessionCookie=cookies(request).session;
