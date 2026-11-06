@@ -7,6 +7,7 @@ local remote = ReplicatedStorage:WaitForChild("PESADILLA_ReportPlayer")
 local gui = Instance.new("ScreenGui")
 gui.Name = "PESADILLA_ReportsUI"
 gui.ResetOnSpawn = false
+gui.DisplayOrder = 1000
 gui.IgnoreGuiInset = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -70,7 +71,7 @@ local categories={
 local categoryIndex=1
 local categoryButton=make("TextButton",{
     Text="Motivo: "..categories[1].label,Font=Enum.Font.Gotham,
-    TextColor3=text,TextSize=13,BackgroundColor3.fromRGB(38,28,36),
+    TextColor3=text,TextSize=13,BackgroundColor3=Color3.fromRGB(38,28,36),
     Position=UDim2.fromOffset(18,135),Size=UDim2.new(1,-36,0,42)
 },modal)
 make("UICorner",{CornerRadius=UDim.new(0,8)},categoryButton)
@@ -108,7 +109,7 @@ local function populate()
                 BackgroundColor3=Color3.fromRGB(48,34,44),
                 Size=UDim2.new(1,-6,0,31),ZIndex=6
             },pickList)
-            item.MouseButton1Click:Connect(function()
+            item.Activated:Connect(function()
                 selectedUserId=target.UserId
                 playerChoice.Text="Jugador: @"..target.Name
                 pickList.Visible=false
@@ -116,24 +117,24 @@ local function populate()
         end
     end
 end
-openButton.MouseButton1Click:Connect(function()
+openButton.Activated:Connect(function()
     modal.Visible=not modal.Visible
     pickList.Visible=false
 end)
-close.MouseButton1Click:Connect(function()
+close.Activated:Connect(function()
     modal.Visible=false
     pickList.Visible=false
 end)
-playerChoice.MouseButton1Click:Connect(function()
+playerChoice.Activated:Connect(function()
     populate()
     pickList.Visible=not pickList.Visible
 end)
-categoryButton.MouseButton1Click:Connect(function()
+categoryButton.Activated:Connect(function()
     categoryIndex=categoryIndex%#categories+1
     categoryButton.Text="Motivo: "..categories[categoryIndex].label
 end)
 local busy=false
-submit.MouseButton1Click:Connect(function()
+submit.Activated:Connect(function()
     if busy then return end
     if not selectedUserId then status.Text="Selecciona un jugador." return end
     if #description.Text<5 or #description.Text>240 then
