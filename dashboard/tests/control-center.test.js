@@ -82,7 +82,8 @@ test('Roblox confirms ban explicitly, polling alone must never mark it applied',
  const ack=serviceReq('/api/ingest/moderation/ack','POST',{id:1,status:'applied',serverJobId:'publicserver1',message:'BanAsync completed'});
  assert.equal((await controlService(ack,env,new URL(ack.url))).status,200);
  assert.equal(moderations[0].status,'applied');
- assert.equal((await controlService(ack,env,new URL(ack.url))).status,409);
+ const secondAck=serviceReq('/api/ingest/moderation/ack','POST',{id:1,status:'applied',serverJobId:'publicserver1',message:'BanAsync completed'});
+ assert.equal((await controlService(secondAck,env,new URL(secondAck.url))).status,409);
 });
 test('bot sync is private and returns configured channels',async()=>{
  const {env,settings}=fixture();
