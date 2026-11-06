@@ -19,7 +19,11 @@ if not remote then
     remote.Parent = ReplicatedStorage
 end
 
-local lastCalls = {} -- Keep separate rate limits by action so metadata does not block chunk 0.
+local lastCalls = {} -- Metadata cooldown and rolling download limits per authorized admin.
+local requestCounts = {}
+local REQUEST_WINDOW = 30
+local MAX_REQUESTS_PER_WINDOW = 120
+local MAX_CONCURRENT_REQUESTS = 4
 local activeMatch = {}
 local function authorized(player)
     return (ALLOW_STUDIO_TEST and RunService:IsStudio()) or ADMIN_USER_IDS[player.UserId] == true
@@ -71,30 +75,49 @@ remote.OnServerInvoke = function(player, action, matchId, chunkIndex)
     end
 
     local now = os.clock()
-    local interval = action == "meta" and 1 or 0.15
-    local prior = lastCalls[player]
-    if not prior then
-        prior = {}
-        lastCalls[player] = prior
-    end
-    if now - (prior[action] or -100) < interval then
-        return {ok = false, error = "too_many_requests_" .. action}
-    end
-    prior[action] = now
+    -- Metadata requests are infrequent; chunks can be legitimately requested in bursts
+    -- by the Replay Theater client. A 0.15s per-chunk cooldown blocked chunk 0.
     if action == "meta" then
-        local result = getFromDashboard("meta", matchId)
-        if result.ok then activeMatch[player] = matchId end
-        return result
+        if now - (lastCalls[player] or -100) < 1 then
+            return {ok = false, error = "too_many_requests_meta" }
+        end
+        lastCalls[player] = now
+    elseif activeMatch[player] ~= matchId then
+        return {ok = false, error = "open_meta_first" }
     end
-    if activeMatch[player] ~= matchId then return {ok = false, error = "open_meta_first"} end
-    local result = getFromDashboard(action == "events" and "events" or "chunk", matchId, chunkIndex)
-    if result.ok and action == "chunk" and #result.data.frames > 40 then return {ok = false, error = "invalid_chunk_frames"} end
-    if result.ok and action == "events" and #result.data.events > 40 then return {ok = false, error = "invalid_chunk_events"} end
+
+    local usage = requestCounts[player]
+    if not usage or now - usage.windowStart >= REQUEST_WINDOW then
+        usage = {windowStart = now, count = 0, inFlight = 0}
+        requestCounts[player] = usage
+    end
+    if usage.count >= MAX_REQUESTS_PER_WINDOW then
+        return {ok = false, error = "download_limit_30s" }
+    end
+    if usage.inFlight >= MAX_CONCURRENT_REQUESTS then
+        return {ok = false, error = "too_many_simultaneous_downloads" }
+    end
+    usage.count += 1
+    usage.inFlight += 1
+    local kind = action == "meta" and "meta" or (action == "events" and "events" or "chunk")
+    local result = getFromDashboard(kind, matchId, chunkIndex)
+    usage.inFlight -= 1
+
+    if result.ok and action == "meta" then
+        activeMatch[player] = matchId
+    end
+    if result.ok and action == "chunk" and (typeof(result.data.frames) ~= "table" or #result.data.frames > 40) then
+        return {ok = false, error = "invalid_chunk_frames" }
+    end
+    if result.ok and action == "events" and (typeof(result.data.events) ~= "table" or #result.data.events > 40) then
+        return {ok = false, error = "invalid_chunk_events" }
+    end
     return result
 end
 
 Players.PlayerRemoving:Connect(function(p)
     lastCalls[p] = nil
+    requestCounts[p] = nil
     activeMatch[p] = nil
 end)
 print("[PESADILLA Replay V2] Bridge listo; configura ADMIN_USER_IDS antes de publicar")
