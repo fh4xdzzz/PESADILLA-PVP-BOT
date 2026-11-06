@@ -1,6 +1,6 @@
 # PESADILLA PVP — Proyecto nuevo, desde cero
 
-> **Proyecto independiente.** Esta rama sustituye totalmente los archivos del bot y dashboard antiguos. No reutiliza la web anterior, su Worker, sus endpoints, su base de datos ni sus secretos. El código anterior sigue intacto en la rama `main` hasta decidir cuándo sustituirlo.
+> **Proyecto reiniciado desde cero.** El código actual contiene solamente el login con Discord, el dashboard personal y la consulta/vinculación de perfiles Roblox. No reutiliza la web anterior, su Worker, sus endpoints, su base de datos ni sus secretos. Las versiones antiguas solo permanecen en el historial de Git y en ramas anteriores, no en el árbol de archivos de `main`.
 
 ## Paso 1 — Base vacía + login Discord
 
