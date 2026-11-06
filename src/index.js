@@ -6,6 +6,7 @@ const { config, validateConfig } = require('./config.js');
 const { log } = require('./logger.js');
 const { startDashboardSync, syncDashboardSettings } = require('./services/dashboardSync.js');
 const { getSetting } = require('./services/settings.js');
+const { startGuildDirectorySync } = require('./services/guildDirectorySync.js');
 
 async function main() {
   log.info('Iniciando PESADILLA PVP BOT v2 (JavaScript)...');
@@ -18,6 +19,7 @@ async function main() {
 
   client.once('clientReady', async () => {
     log.info('Registrando comandos...');
+    startGuildDirectorySync(client);
     await registerCommands();
   });
 
@@ -25,9 +27,9 @@ async function main() {
 
   client.on('guildMemberAdd', async (member) => {
     try {
-      const enabled=await getSetting('welcome.enabled');
+      const enabled=await getSetting('welcome.enabled',member.guild.id);
       if(enabled==='false')return;
-      const configuredMessage=await getSetting('welcome.message');
+      const configuredMessage=await getSetting('welcome.message',member.guild.id);
       const description=typeof configuredMessage==='string'&&configuredMessage.trim()
         ?configuredMessage.slice(0,240)
         :'Lee las reglas en el canal 📜rules y enlaza tu cuenta de Roblox con `/vincular`.';
