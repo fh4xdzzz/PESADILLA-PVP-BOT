@@ -28,7 +28,7 @@ make("UIStroke",{Color=Color3.fromRGB(125,38,61),Thickness=1},top)
 local title = make("TextLabel",{Size=UDim2.new(.48,0,1,0),Position=UDim2.fromOffset(20,0),BackgroundTransparency=1,Font=Enum.Font.GothamBold,TextSize=20,TextColor3=Color3.fromRGB(255,240,245),TextXAlignment=Enum.TextXAlignment.Left,Text="PESADILLA PVP  /  REPLAY"},top)
 local exit=make("TextButton",{Size=UDim2.fromOffset(110,36),Position=UDim2.new(1,-124,0,13),BackgroundColor3=Color3.fromRGB(112,29,52),TextColor3=Color3.new(1,1,1),TextSize=14,Font=Enum.Font.GothamBold,Text="CERRAR"},top)
 make("UICorner",{CornerRadius=UDim.new(0,8)},exit)
-local panel=make("Frame",{Size=UDim2.fromOffset(480,166),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),BackgroundColor3=Color3.fromRGB(19,17,25)},gui)
+local panel=make("Frame",{Size=UDim2.fromOffset(480,166),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),BackgroundColor3=Color3.fromRGB(19,17,25),Visible=false},gui)
 make("UICorner",{CornerRadius=UDim.new(0,12)},panel)
 make("UIStroke",{Color=Color3.fromRGB(149,48,72),Thickness=1.5},panel)
 local hint=make("TextLabel",{Size=UDim2.new(1,-30,0,42),Position=UDim2.fromOffset(15,10),BackgroundTransparency=1,TextColor3=Color3.fromRGB(245,230,235),Text="ABRIR REPLAY 3D  |  Pega el ID de la partida",Font=Enum.Font.GothamBold,TextSize=16},panel)
@@ -51,9 +51,11 @@ local track=make("Frame",{Size=UDim2.new(1,-30,0,10),Position=UDim2.fromOffset(1
 make("UICorner",{CornerRadius=UDim.new(1,0)},track)
 local fill=make("Frame",{Size=UDim2.fromScale(0,1),BackgroundColor3=Color3.fromRGB(237,68,106)},track)
 make("UICorner",{CornerRadius=UDim.new(1,0)},fill)
+local eventText=make("TextLabel",{Size=UDim2.new(.75,0,0,28),Position=UDim2.new(.5,0,0,75),AnchorPoint=Vector2.new(.5,0),BackgroundColor3=Color3.fromRGB(15,12,19),BackgroundTransparency=.22,TextColor3=Color3.fromRGB(255,223,233),Font=Enum.Font.GothamBold,TextSize=16,Text="",ZIndex=5},shell)
 local message=make("TextLabel",{Size=UDim2.new(1,-30,0,17),Position=UDim2.fromOffset(15,81),BackgroundTransparency=1,TextColor3=Color3.fromRGB(220,178,188),Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,Text="F8: abrir visor  |  Arrastra en la escena para girar la camara"},overlay)
 local loading=false
 local frames={}
+local events={}
 local objects={}
 local ids={}
 local duration=0
@@ -172,6 +174,22 @@ local function startReplay(matchId)
         end
         for _,frame in ipairs(packet.frames) do table.insert(loaded,frame) end
     end
+    local loadedEvents={}
+    local eventCount=math.clamp(tonumber(meta.eventChunks) or 0,0,50)
+    for i=0,eventCount-1 do
+        local packet
+        for attempt=1,3 do
+            task.wait(.2*attempt)
+            local success,response=pcall(function()return bridge:InvokeServer("events",matchId,i)end)
+            if success and response and response.ok then packet=response.data;break end
+        end
+        if packet and typeof(packet.events)=="table" then
+            for _,event in ipairs(packet.events) do table.insert(loadedEvents,event) end
+        else
+            warn("[PESADILLA Replay V2] Faltan eventos de la partida",matchId,i)
+        end
+    end
+    table.sort(loadedEvents,function(a,b)return a[1]<b[1]end)
     table.sort(loaded,function(a,b)return a[1]<b[1]end)
     local unique={}
     for _,frame in ipairs(loaded) do
@@ -185,6 +203,7 @@ local function startReplay(matchId)
     end
     table.sort(ids)
     frames=loaded
+    events=loadedEvents
     duration=math.max(.01,tonumber(meta.duration) or 0)
     current=0
     cameraIndex=0
@@ -208,6 +227,7 @@ local function close()
     panel.Visible=false
     clearStage()
     table.clear(frames)
+    table.clear(events)
 end
 exit.Activated:Connect(close)
 play.Activated:Connect(function()
@@ -286,6 +306,20 @@ RunService.RenderStepped:Connect(function(dt)
     end
     local offset=Vector3.new(math.sin(azimuth)*math.cos(elevation),math.sin(elevation),math.cos(azimuth)*math.cos(elevation))*distance
     camera.CFrame=CFrame.lookAt(target+offset,target)
+    local recent=nil
+    for i=#events,1,-1 do
+        local event=events[i]
+        if event[1]<=current and current-event[1]<1.2 then
+            recent=event
+            break
+        end
+    end
+    if recent then
+        local labels={fire="DISPARO",hit="IMPACTO",kill="ELIMINACION",jump="SALTO",equip="ARMA",round="RONDA",ability="HABILIDAD",respawn="REAPARICION",death="MUERTE"}
+        eventText.Text=(labels[recent[2]] or recent[2]).."  ·  "..tostring(recent[3]).."  "..tostring(recent[8] or "")
+    else
+        eventText.Text=""
+    end
     stamp.Text=timeText(current).." / "..timeText(duration)
     fill.Size=UDim2.fromScale(current/math.max(duration,.01),1)
 end)
