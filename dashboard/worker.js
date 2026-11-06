@@ -1,3 +1,6 @@
+import { ingestReplay } from './replay-api.js';
+import { replayPage } from './replay-view.js';
+import { replayClientSource } from './replay-client.js';
 import { ingestReport, showReports, showReportDetail, updateReport } from './reports.js';
 import { renderDashboard, renderShell } from './pro-ui.js';
 const encoder = new TextEncoder();
@@ -73,6 +76,8 @@ async fetch(request,env) {
 const u=new URL(request.url), path=u.pathname, method=request.method;
 if(path==='/api/ingest/match' && method==='POST') return handleMatchIngest(request,env);
 if(path==='/api/ingest/report' && method==='POST') return ingestReport(request,env);
+if(path==='/api/ingest/replay' && method==='POST') return ingestReplay(request,env);
+if(path==='/assets/replay-client.js' && method==='GET')return new Response(replayClientSource,{headers:{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}});
 if(method!=='GET' && !(method==='POST' && /^\/reportes\/[a-zA-Z0-9:_-]{1,100}\/actualizar$/.test(path)))return response('Método no permitido',405,{'Allow':'GET, POST'});
 if(path==='/health')return Response.json({ok:true,service:'pesadilla-pvp-dashboard'});
 const origin=env.APP_BASE_URL;
@@ -122,6 +127,8 @@ if(path==='/logout')return redirect('/login',secureCookie('session','',0));
 const user=await verify(cookies(request).session,env.SESSION_SECRET);
 if(!user || !env.DASHBOARD_ADMIN_IDS.split(',').map(x=>x.trim()).includes(user.id))return response(layout('Acceso',`<h1>Panel de administración</h1><p>Inicia sesión con una cuenta autorizada de Discord para gestionar PESADILLA PVP.</p><p><a class="button" href="/login">Entrar con Discord</a></p>`),401);
 if(path==='/reportes' && method==='GET')return response(await showReports(env,user,u.searchParams));
+const replayRoute=path.match(/^\/replays\/([A-Za-z0-9:_-]{1,100})$/);
+if(replayRoute && method==='GET')return response(await replayPage(env,user,replayRoute[1]));
 const reportDetail=path.match(/^\/reportes\/([a-zA-Z0-9:_-]{1,100})$/);
 const reportUpdate=path.match(/^\/reportes\/([a-zA-Z0-9:_-]{1,100})\/actualizar$/);
 const sessionCookie=cookies(request).session;
