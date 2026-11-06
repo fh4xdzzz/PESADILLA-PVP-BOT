@@ -1,3 +1,4 @@
+import { handleStaffAdmin } from './staff-roles.js';
 import { requestTheater, claimTheater } from './replay-theater.js';
 import { ingestReplay, readReplayForRoblox, ingestReplayEvents, readReplayEventsForRoblox } from './replay-api.js';
 import { replayPage } from './replay-view.js';
@@ -82,6 +83,7 @@ if((path==='/api/ingest/replay/meta'||path==='/api/ingest/replay/chunk') && meth
 if(path==='/api/ingest/replay/events' && method==='POST')return ingestReplayEvents(request,env);
 if(path==='/api/ingest/replay/events' && method==='GET')return readReplayEventsForRoblox(request,env,u);
 if(path==='/api/ingest/replay/claim' && method==='GET')return claimTheater(request,env,u);
+if(path.startsWith('/api/ingest/admin/'))return handleStaffAdmin(request,env,u);
 if(path==='/assets/replay-client.js' && method==='GET')return new Response(replayClientSource,{headers:{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}});
 if(method!=='GET' && !(method==='POST' && (path==='/api/ingest/replay/request'||/^\/reportes\/[a-zA-Z0-9:_-]{1,100}\/actualizar$/.test(path))))return response('Método no permitido',405,{'Allow':'GET, POST'});
 if(path==='/health')return Response.json({ok:true,service:'pesadilla-pvp-dashboard'});

@@ -86,3 +86,21 @@ CREATE TABLE IF NOT EXISTS replay_launch_requests (
  created_at_ms INTEGER NOT NULL,
  claimed_at_ms INTEGER
 );
+
+-- Roblox staff roles (server-enforced) and audit log.
+CREATE TABLE IF NOT EXISTS staff_roles (
+ roblox_user_id TEXT PRIMARY KEY,
+ discord_user_id TEXT,
+ role TEXT NOT NULL CHECK(role IN ('owner','administrador','moderador','soporte')),
+ granted_by TEXT,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS staff_role_audit (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ roblox_user_id TEXT NOT NULL,
+ old_role TEXT,
+ new_role TEXT NOT NULL,
+ granted_by TEXT,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
