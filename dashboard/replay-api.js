@@ -84,7 +84,9 @@ export async function readReplayForRoblox(request,env,url){
   const meta=await env.DB.prepare('SELECT match_id,total_chunks,duration,finished FROM replay_meta WHERE match_id=?').bind(id).first();
   if(!meta)return reply({error:'not_recorded'},404);
   if(url.pathname.endsWith('/meta')){
-   return reply({matchId:id,duration:Number(meta.duration),totalChunks:Number(meta.total_chunks),complete:Boolean(meta.finished)});
+   await env.DB.prepare('CREATE TABLE IF NOT EXISTS replay_event_meta(match_id TEXT PRIMARY KEY,total_chunks INTEGER NOT NULL)').run();
+   const em=await env.DB.prepare('SELECT total_chunks FROM replay_event_meta WHERE match_id=?').bind(id).first();
+   return reply({matchId:id,duration:Number(meta.duration),totalChunks:Number(meta.total_chunks),eventChunks:Number(em?.total_chunks||0),complete:Boolean(meta.finished)});
   }
   const raw=url.searchParams.get('index');
   if(!/^(0|[1-9]\d*)$/.test(raw||''))return reply({error:'invalid_index'},400);
@@ -106,7 +108,7 @@ export async function ingestReplayEvents(request,env){
  if(raw.length>44000)return reply({error:'too_large'},413);
  let x;try{x=JSON.parse(raw);}catch{return reply({error:'invalid_json'},400);}
  const types=new Set(['fire','hit','kill','jump','equip','round','ability','respawn','death']);
- if(!matchIdOk(x?.matchId)||!Number.isInteger(x.index)||x.index<0||x.index>49||!Array.isArray(x.events)||x.events.length>40)return reply({error:'invalid_batch'},400);
+ if(!matchIdOk(x?.matchId)||!Number.isInteger(x.index)||x.index<0||x.index>49||!Number.isInteger(x.totalChunks)||x.totalChunks<1||x.totalChunks>50||x.index>=x.totalChunks||!Array.isArray(x.events)||x.events.length<1||x.events.length>40)return reply({error:'invalid_batch'},400);
  for(const e of x.events){
   // [time, kind, actorId, targetId|null, x, y, z, shortDetail]
   if(!Array.isArray(e)||e.length!==8||!finite(e[0])||e[0]<0||e[0]>900||
@@ -117,7 +119,13 @@ export async function ingestReplayEvents(request,env){
  try{
   await replaySchema(env);
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS replay_event_chunks(match_id TEXT NOT NULL,chunk_index INTEGER NOT NULL,events_json TEXT NOT NULL,PRIMARY KEY(match_id,chunk_index))').run();
-  await env.DB.prepare('INSERT INTO replay_event_chunks(match_id,chunk_index,events_json) VALUES(?,?,?) ON CONFLICT(match_id,chunk_index) DO NOTHING').bind(x.matchId,x.index,JSON.stringify(x.events)).run();
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS replay_event_meta(match_id TEXT PRIMARY KEY,total_chunks INTEGER NOT NULL)').run();
+  const prev=await env.DB.prepare('SELECT total_chunks FROM replay_event_meta WHERE match_id=?').bind(x.matchId).first();
+  if(prev && prev.total_chunks!==x.totalChunks)return reply({error:'event_chunk_count_conflict'},409);
+  await env.DB.batch([
+   env.DB.prepare('INSERT INTO replay_event_meta(match_id,total_chunks) VALUES(?,?) ON CONFLICT(match_id) DO NOTHING').bind(x.matchId,x.totalChunks),
+   env.DB.prepare('INSERT INTO replay_event_chunks(match_id,chunk_index,events_json) VALUES(?,?,?) ON CONFLICT(match_id,chunk_index) DO NOTHING').bind(x.matchId,x.index,JSON.stringify(x.events))
+  ]);
   return reply({ok:true,index:x.index},201);
  }catch(e){console.error('Replay event upload failed',String(e?.message||'').slice(0,120));return reply({error:'database_error'},500);}
 }
