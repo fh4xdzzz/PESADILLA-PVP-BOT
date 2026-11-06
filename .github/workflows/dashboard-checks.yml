@@ -20,6 +20,7 @@ jobs:
         run: |
           node --check dashboard/lucide-icons.js
           node --check dashboard/pro-ui.js
+          node --check dashboard/portal-ui.js
           node --check dashboard/worker.js
           node --check dashboard/replay-api.js
           node --check dashboard/replay-theater.js
