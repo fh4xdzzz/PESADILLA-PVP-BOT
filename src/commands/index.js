@@ -1,8 +1,5 @@
-const { moderationBuilders, publicBuilders, staffBuilders } = require('./builders.js');
+const allCommands = require('./all.js');
 
 module.exports = {
-  moderationBuilders,
-  publicBuilders,
-  staffBuilders,
-  all: [...moderationBuilders, ...publicBuilders, ...staffBuilders],
+  all: allCommands,
 };
