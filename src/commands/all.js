@@ -203,7 +203,7 @@ const staffBuilders = [
     .addSubcommand((s) => s.setName('end').setDescription('Finalizar sorteo')
       .addStringOption((o) => o.setName('id').setDescription('ID').setRequired(true)))
     .addSubcommand((s) => s.setName('reroll').setDescription('Re-sortear')
-      .addStringOption((o) => o.setName('id').setDescription('ID').setRequired(true)),
+      .addStringOption((o) => o.setName('id').setDescription('ID').setRequired(true))),
 
   new SlashCommandBuilder()
     .setName('tournament')
@@ -216,7 +216,7 @@ const staffBuilders = [
     .addSubcommand((s) => s.setName('list').setDescription('Ver torneo activo'))
     .addSubcommand((s) => s.setName('result').setDescription('[STAFF] Registrar resultado')
       .addUserOption((o) => o.setName('usuario').setDescription('Ganador').setRequired(true))
-      .addIntegerOption((o) => o.setName('colocacion').setDescription('Posición').setRequired(true).setMinValue(1)),
+      .addIntegerOption((o) => o.setName('colocacion').setDescription('Posición').setRequired(true).setMinValue(1))),
 
   new SlashCommandBuilder()
     .setName('config')
