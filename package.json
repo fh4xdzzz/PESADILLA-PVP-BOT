@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "postinstall": "prisma generate && prisma db push --skip-generate",
+    "postinstall": "sh scripts/fix-handler-paths.sh && prisma generate && prisma db push --skip-generate",
     "start": "node index.js",
     "deploy-commands": "node src/deploy-commands.js"
   },
