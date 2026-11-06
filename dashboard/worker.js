@@ -48,7 +48,7 @@ stage='profile';
 const profileResponse=await fetch('https://discord.com/api/v10/users/@me',{headers:{Authorization:`Bearer ${token.access_token}`}});
 if(!profileResponse.ok){diagnostic=`profile_${profileResponse.status}`;throw Error('Discord profile request failed');}
 const profile=await profileResponse.json();
-if(!profile || !/^\\d+$/.test(String(profile.id))){diagnostic='profile_invalid_id';throw Error('Invalid Discord user');}
+if(!profile || !/^[0-9]+$/.test(String(profile.id))){diagnostic='profile_invalid_id';throw Error('Invalid Discord user');}
 const admins=env.DASHBOARD_ADMIN_IDS.split(',').map(x=>x.trim());
 if(!admins.includes(profile.id))return response('Tu cuenta Discord no está autorizada para este panel.',403,{'Set-Cookie':secureCookie('oauth_state','',0)});
 stage='session';
