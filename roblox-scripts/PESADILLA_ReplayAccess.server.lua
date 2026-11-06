@@ -51,13 +51,13 @@ end
 
 remote.OnServerInvoke = function(player, action, matchId, chunkIndex)
     if not authorized(player) then return {ok = false, error = "permission_denied"} end
-    if typeof(action) ~= "string" or (action ~= "meta" and action ~= "chunk") then
+    if typeof(action) ~= "string" or (action ~= "meta" and action ~= "chunk" and action ~= "events") then
         return {ok = false, error = "invalid_action"}
     end
     if typeof(matchId) ~= "string" or #matchId > 100 or not matchId:match("^[%w:_%-]+$") then
         return {ok = false, error = "invalid_match_id"}
     end
-    if action == "chunk" and (typeof(chunkIndex) ~= "number" or chunkIndex ~= math.floor(chunkIndex) or chunkIndex < 0 or chunkIndex > 49) then
+    if (action == "chunk" or action == "events") and (typeof(chunkIndex) ~= "number" or chunkIndex ~= math.floor(chunkIndex) or chunkIndex < 0 or chunkIndex > 49) then
         return {ok = false, error = "invalid_chunk"}
     end
 
@@ -73,8 +73,9 @@ remote.OnServerInvoke = function(player, action, matchId, chunkIndex)
         return result
     end
     if activeMatch[player] ~= matchId then return {ok = false, error = "open_meta_first"} end
-    local result = getFromDashboard("chunk", matchId, chunkIndex)
-    if result.ok and #result.data.frames > 40 then return {ok = false, error = "invalid_chunk_frames"} end
+    local result = getFromDashboard(action == "events" and "events" or "chunk", matchId, chunkIndex)
+    if result.ok and action == "chunk" and #result.data.frames > 40 then return {ok = false, error = "invalid_chunk_frames"} end
+    if result.ok and action == "events" and #result.data.events > 40 then return {ok = false, error = "invalid_chunk_events"} end
     return result
 end
 
