@@ -18,6 +18,7 @@ jobs:
           node-version: '22'
       - name: Check dashboard syntax
         run: |
+          node --check dashboard/lucide-icons.js
           node --check dashboard/pro-ui.js
           node --check dashboard/worker.js
       - name: Check D1 configuration
