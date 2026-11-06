@@ -20,5 +20,8 @@ export function isDiscordConfigured(): boolean {
 }
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(optionalEnv("SUPABASE_URL") && optionalEnv("SUPABASE_SERVICE_ROLE_KEY"));
+  return Boolean(
+    optionalEnv("SUPABASE_URL") &&
+      (optionalEnv("SUPABASE_SERVICE_ROLE_KEY") || optionalEnv("SUPABASE_PUBLISHABLE_KEY"))
+  );
 }

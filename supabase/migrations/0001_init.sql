@@ -31,3 +31,11 @@ create unique index if not exists roblox_links_roblox_user_id_key
 
 alter table public.discord_users enable row level security;
 alter table public.roblox_links enable row level security;
+
+-- Fase 1: la web escribe identidades Discord con la publishable key (rol anon).
+-- Solo INSERT/UPDATE en discord_users; sin SELECT ni acceso a roblox_links.
+create policy if not exists discord_users_insert_anon on public.discord_users
+  for insert to anon with check (true);
+
+create policy if not exists discord_users_update_anon on public.discord_users
+  for update to anon using (true) with check (true);

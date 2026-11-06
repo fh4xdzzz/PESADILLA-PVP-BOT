@@ -6,7 +6,9 @@ let client: SupabaseClient | null = null;
 
 export function getSupabase(): SupabaseClient | null {
   const url = optionalEnv("SUPABASE_URL");
-  const key = optionalEnv("SUPABASE_SERVICE_ROLE_KEY");
+  // Prefer the service role key; fall back to a publishable key (works with the
+  // RLS policies defined in supabase/migrations). Both stay server-only.
+  const key = optionalEnv("SUPABASE_SERVICE_ROLE_KEY") ?? optionalEnv("SUPABASE_PUBLISHABLE_KEY");
   if (!url || !key) return null;
   if (!client) client = createClient(url, key, { auth: { persistSession: false } });
   return client;
