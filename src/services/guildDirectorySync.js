@@ -13,7 +13,7 @@ async function publishGuildDirectory(client){
    const kind=guild.id===config.discord.mainGuildId?'main':guild.id===config.discord.supportGuildId?'support':'other';
    guilds.push({
     id:guild.id,name:guild.name,kind,memberCount:guild.memberCount||0,
-    channels:[...channels.values()].filter(c=>c&&[0,2,4,5,13,15].includes(c.type))
+    channels:[...channels.values()].filter(c=>c&&[0,2,4,5,13,15,16].includes(c.type))
       .map(c=>({id:c.id,name:c.name,type:c.type,parentId:c.parentId||null})),
     roles:[...roles.values()].filter(r=>r).map(r=>({id:r.id,name:r.name,position:r.position}))
    });
