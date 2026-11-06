@@ -6,7 +6,7 @@ function response(body, status=200, headers={}) { return new Response(body,{stat
 function redirect(url,cookie) {const h=new Headers({'Location':url,'Cache-Control':'no-store'}); if(cookie) h.append('Set-Cookie',cookie); return new Response(null,{status:302,headers:h});}
 function base64url(bytes) {return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');}
 function from64(s) {return Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));}
-async function hmac(data, secret) {const key=await crypto.subtle.importKey('raw',encoder.encode(secret),'HMAC',false,['sign']);return base64url(new Uint8Array(await crypto.subtle.sign('HMAC',key,encoder.encode(data))));}
+async function hmac(data, secret) {const key=await crypto.subtle.importKey('raw',encoder.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return base64url(new Uint8Array(await crypto.subtle.sign('HMAC',key,encoder.encode(data))));}
 async function verify(value,secret) {if(!value || !value.includes('.')) return null;const [payload,sig]=value.split('.');const check=await hmac(payload,secret);if(sig.length!==check.length)return null;let mismatch=0;for(let i=0;i<sig.length;i++)mismatch |= sig.charCodeAt(i)^check.charCodeAt(i);if(mismatch)return null;try{const x=JSON.parse(new TextDecoder().decode(from64(payload)));return x.exp>Date.now() && /^\d+$/.test(x.id) ? x : null;}catch{return null;}}
 function layout(title,body,user=null) {
 const nav=['Inicio','Jugadores','Partidas','Reportes','Baneos','Discord'].map((name,i)=>`<a class="${title===name?'selected':''}" href="${i===0?'/':('/'+['','jugadores','partidas','reportes','baneos','discord'][i])}">${name}</a>`).join('');
