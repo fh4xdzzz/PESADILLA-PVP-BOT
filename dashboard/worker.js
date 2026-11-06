@@ -1,3 +1,4 @@
+import { renderDashboard, renderShell } from './pro-ui.js';
 const encoder = new TextEncoder();
 function htmlEscape(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function cookies(request) { return Object.fromEntries((request.headers.get('Cookie') || '').split(';').map(x => x.trim().split(/=(.*)/s).slice(0, 2)).filter(x => x[0])); }
@@ -119,7 +120,7 @@ if(path==='/logout')return redirect('/login',secureCookie('session','',0));
 const user=await verify(cookies(request).session,env.SESSION_SECRET);
 if(!user || !env.DASHBOARD_ADMIN_IDS.split(',').map(x=>x.trim()).includes(user.id))return response(layout('Acceso',`<h1>Panel de administración</h1><p>Inicia sesión con una cuenta autorizada de Discord para gestionar PESADILLA PVP.</p><p><a class="button" href="/login">Entrar con Discord</a></p>`),401);
 if(path==='/api/summary')return Response.json({data:await stats(env),readOnly:true},{headers:{'Cache-Control':'no-store'}});
-if(!(path in titles))return response('No encontrado',404);
-return response(await page(path,env,user));
+if(!(path in titles) && !/^\/partidas\/[a-zA-Z0-9:_-]{1,100}$/.test(path))return response('No encontrado',404);
+return response(await renderDashboard(path,env,user,u.searchParams));
 }
 };
