@@ -37,7 +37,7 @@ enum CaseStatus {
 
 model Case {
   id           String     @id @default(cuid())
-  caseNumber   Int        @unique @default(autoincrement())
+  caseNumber   Int        @unique
   type         CaseType
   status       CaseStatus @default(ACTIVE)
   // Sujeto de la sancion: Roblox userId o Discord userId segun el tipo
