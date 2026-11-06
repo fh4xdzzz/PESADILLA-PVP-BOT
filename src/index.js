@@ -4,11 +4,14 @@ const { connectDb, disconnectDb } = require('./db.js');
 const { handleInteraction } = require('./commands/interactionHandler.js');
 const { config, validateConfig } = require('./config.js');
 const { log } = require('./logger.js');
+const { startDashboardSync } = require('./services/dashboardSync.js');
+const { getSetting } = require('./services/settings.js');
 
 async function main() {
   log.info('Iniciando PESADILLA PVP BOT v2 (JavaScript)...');
   validateConfig();
   await connectDb();
+  startDashboardSync();
 
   const client = createClient();
 
@@ -21,19 +24,20 @@ async function main() {
 
   client.on('guildMemberAdd', async (member) => {
     try {
+      const enabled=await getSetting('welcome.enabled');
+      if(enabled==='false')return;
+      const configuredMessage=await getSetting('welcome.message');
+      const description=typeof configuredMessage==='string'&&configuredMessage.trim()
+        ?configuredMessage.slice(0,240)
+        :'Lee las reglas en el canal 📜rules y enlaza tu cuenta de Roblox con `/vincular`.';
       await member.send({
-        embeds: [
-          {
-            color: 0x7c3aed,
-            title: '👋 Bienvenido a PESADILLA PVP',
-            description: 'Lee las reglas en el canal 📜rules y enlaza tu cuenta de Roblox con `/vincular`.',
-            footer: { text: 'PESADILLA PVP • BOT OFICIAL' },
-          },
-        ],
-      }).catch(() => {});
-    } catch (err) {
-      log.debug({ err, userId: member.id }, 'No se pudo enviar DM de bienvenida');
-   };
+        allowedMentions:{parse:[]},
+        embeds:[{color:0xc63756,title:'👋 Bienvenido a PESADILLA PVP',
+          description,footer:{text:'PESADILLA PVP • BOT OFICIAL'}}],
+      }).catch(()=>{});
+    } catch(err){
+      log.debug({err,userId:member.id},'No se pudo enviar DM de bienvenida');
+    }
   });
 
   await client.login(config.discord.token);
