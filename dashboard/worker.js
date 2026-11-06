@@ -1,4 +1,4 @@
-import { ingestReplay, readReplayForRoblox } from './replay-api.js';
+import { ingestReplay, readReplayForRoblox, ingestReplayEvents, readReplayEventsForRoblox } from './replay-api.js';
 import { replayPage } from './replay-view.js';
 import { replayClientSource } from './replay-client.js';
 import { ingestReport, showReports, showReportDetail, updateReport } from './reports.js';
@@ -78,6 +78,8 @@ if(path==='/api/ingest/match' && method==='POST') return handleMatchIngest(reque
 if(path==='/api/ingest/report' && method==='POST') return ingestReport(request,env);
 if(path==='/api/ingest/replay' && method==='POST') return ingestReplay(request,env);
 if((path==='/api/ingest/replay/meta'||path==='/api/ingest/replay/chunk') && method==='GET')return readReplayForRoblox(request,env,u);
+if(path==='/api/ingest/replay/events' && method==='POST')return ingestReplayEvents(request,env);
+if(path==='/api/ingest/replay/events' && method==='GET')return readReplayEventsForRoblox(request,env,u);
 if(path==='/assets/replay-client.js' && method==='GET')return new Response(replayClientSource,{headers:{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}});
 if(method!=='GET' && !(method==='POST' && /^\/reportes\/[a-zA-Z0-9:_-]{1,100}\/actualizar$/.test(path)))return response('Método no permitido',405,{'Allow':'GET, POST'});
 if(path==='/health')return Response.json({ok:true,service:'pesadilla-pvp-dashboard'});
