@@ -139,8 +139,9 @@ if(['/', '/discord', '/moderacion'].includes(path)){
  if(method==='POST')return controlWrite(request,env,user,cookies(request).session,path);
  if(method==='GET')return response(await controlPage(path,env,user,cookies(request).session,u.searchParams));
 }
+if(method==='GET' && (path==='/partidas'||path==='/jugadores'||path==='/reportes'||path==='/baneos'||path.startsWith('/partidas/')||path.startsWith('/jugadores/')||path.startsWith('/replays/')))return redirect('/');
 if(path==='/api/ingest/replay/request' && method==='POST')return requestTheater(request,env,user,u);
-if(path==='/reportes' && method==='GET')return response(await showReports(env,user,u.searchParams));
+// Reports are still ingested for the in-game ADMIN panel, but not displayed on this website.
 const replayRoute=path.match(/^\/replays\/([A-Za-z0-9:_-]{1,100})$/);
 if(replayRoute && method==='GET')return response(await replayPage(env,user,replayRoute[1]));
 const reportDetail=path.match(/^\/reportes\/([a-zA-Z0-9:_-]{1,100})$/);
