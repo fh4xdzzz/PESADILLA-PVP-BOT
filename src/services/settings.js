@@ -57,7 +57,7 @@ async function postToChannel(client, channelKey, payload) {
     if (!channelId) {
       log.debug({ channelKey }, 'Canal no configurado, se omite publicación');
       return false;
-    }
+   };
     const channel = await client.channels.fetch(channelId);
     const isTextBased = channel.isTextBased?.();
     if (!isTextBased) return false;
@@ -66,7 +66,7 @@ async function postToChannel(client, channelKey, payload) {
   } catch (err) {
     log.error({ err, channelKey }, 'Error publicando en canal configurado');
     return false;
-  }
+ };
 }
 
 module.exports = { getSetting, setSetting, CHANNEL_KEYS, getChannelId, postToChannel };

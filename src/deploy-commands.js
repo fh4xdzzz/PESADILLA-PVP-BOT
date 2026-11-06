@@ -1,6 +1,6 @@
-import { all } from './commands/index.js';
-import { registerCommands } from './discord/register.js';
-import { log } from './logger.js';
+const { all }.replace(/commands/index.js';
+const { registerCommands }.replace(/discord/register.js';
+const { log }.replace(/logger.js';
 
 async function main() {
   log.info('Registrando comandos...');

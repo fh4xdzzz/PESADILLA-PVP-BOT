@@ -1,6 +1,4 @@
-const ActionRowBuilder = require('discord.js').ActionRowBuilder;
-const ButtonBuilder = require('discord.js').ButtonBuilder;
-const ButtonStyle = require('discord.js').ButtonStyle;
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const CUSTOM_IDS = {
   banConfirm: (id) => `ban:confirm:${id}`,

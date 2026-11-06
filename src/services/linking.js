@@ -32,7 +32,7 @@ async function consumeLinkCode(code, robloxUserId, robloxName) {
 
   if (!record || record.used || record.expiresAt < new Date()) {
     return null;
-  }
+ };
 
   const updated = await prisma.linkCode.updateMany({
     where: { id: record.id, used: false },

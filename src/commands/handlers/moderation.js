@@ -18,7 +18,7 @@ function deny(interaction, perm) {
   if (!hasPermission(interaction.user.id, perm)) {
     safeReply(interaction, '⛔ No tienes permisos para este comando.', true);
     return true;
-  }
+ };
   return false;
 }
 
@@ -36,11 +36,11 @@ async function rbanHandler(interaction) {
     if (isPerma && !hasPermission(interaction.user.id, 'PERMA_BAN_ROBLOX')) {
       safeReply(interaction, '⛔ Solo ADMIN/OWNER pueden aplicar baneos permanentes.', true);
       return;
-    }
+   };
     if (propagateAlts && !hasPermission(interaction.user.id, 'PROPAGATE_ALTS')) {
       safeReply(interaction, '⛔ Solo ADMIN/OWNER pueden propagar a cuentas alternativas.', true);
       return;
-    }
+   };
 
     await interaction.deferReply({ ephemeral: true });
 
@@ -49,14 +49,14 @@ async function rbanHandler(interaction) {
     if (!isPerma && !durationSec) {
       await interaction.editReply({ content: '❌ Duración inválida. Usa ej: 30m, 12h, 7d, 2w.' });
       return;
-    }
+   };
 
     const avatar = await getAvatarUrl(robloxUser.id);
     const targetDiscordId = (await getLinkByRoblox(robloxUser.id))?.discordUserId;
     if (targetDiscordId && !canModerate(interaction.user.id, targetDiscordId)) {
       await interaction.editReply({ content: '⛔ No puedes moderar a alguien de tu nivel o superior.' });
       return;
-    }
+   };
 
     const expiresAt = durationSec ? new Date(Date.now() + durationSec * 1000) : null;
     const pendingId = `${Date.now()}-${interaction.user.id}`;
@@ -95,7 +95,7 @@ async function rbanHandler(interaction) {
     await interaction.editReply({ embeds: [embed], components: [confirmButtons(pendingId, 'ban')] });
   } catch (err) {
     await safeError(interaction, err, 'rban');
-  }
+ };
 }
 
 async function handleBanConfirm(interaction, action) {
@@ -122,7 +122,7 @@ async function handleBanConfirm(interaction, action) {
     } catch (err) {
       apiError = err;
       log.error({ err, target: action.target }, 'Roblox ban API error');
-    }
+   };
 
     const status = apiError ? 'FAILED' : 'ACTIVE';
     const kase = await createCase({
@@ -169,10 +169,10 @@ async function handleBanConfirm(interaction, action) {
       await interaction.editReply({ embeds: [errorEmbed(`API de Roblox falló: ${apiError.message}`)] });
     } else {
       await interaction.editReply({ embeds: [successEmbed(`Baneo aplicado. Caso #${kase.caseNumber}`)] });
-    }
+   };
   } catch (err) {
     await safeError(interaction, err, 'banConfirm');
-  }
+ };
 }
 
 async function handleBanCancel(interaction, action) {
@@ -191,7 +191,7 @@ async function runbanHandler(interaction) {
     if (!existing?.gameJoinRestriction?.active) {
       await interaction.editReply({ content: '❌ Ese usuario no tiene un baneo activo.' });
       return;
-    }
+   };
 
     await removeUserRestriction(robloxUser.id);
     await createCase({
@@ -216,7 +216,7 @@ async function runbanHandler(interaction) {
     await interaction.editReply({ embeds: [successEmbed('Desbaneo aplicado.') ] });
   } catch (err) {
     await safeError(interaction, err, 'runban');
-  }
+ };
 }
 
 async function rbaninfoHandler(interaction) {
@@ -230,7 +230,7 @@ async function rbaninfoHandler(interaction) {
     if (!restriction) {
       await interaction.editReply({ content: '❌ Sin restricción activa.' });
       return;
-    }
+   };
 
     const r = restriction.gameJoinRestriction;
     await interaction.editReply({
@@ -247,7 +247,7 @@ async function rbaninfoHandler(interaction) {
     });
   } catch (err) {
     await safeError(interaction, err, 'rbaninfo');
-  }
+ };
 }
 
 async function rbanlistHandler(interaction) {
@@ -262,7 +262,7 @@ async function rbanlistHandler(interaction) {
     if (active.length === 0) {
       await interaction.editReply({ content: 'No hay baneos activos.' });
       return;
-    }
+   };
 
     const lines = active.map((r) => {
       const u = r.path?.split('/').pop() ?? '?';
@@ -273,7 +273,7 @@ async function rbanlistHandler(interaction) {
     await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle('📋 Baneos activos').setDescription(lines.slice(0, 4000)).setFooter({ text: `${active.length} mostrados` })] });
   } catch (err) {
     await safeError(interaction, err, 'rbanlist');
-  }
+ };
 }
 
 async function rbanhistoryHandler(interaction) {
@@ -288,13 +288,13 @@ async function rbanhistoryHandler(interaction) {
     if (cases.length === 0) {
       await interaction.editReply({ content: 'Sin historial.' });
       return;
-    }
+   };
 
     const lines = cases.map((c) => `#${c.caseNumber} ${c.type} → ${c.status}`).join('\n');
     await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle(`Historial de ${robloxUser.name}`).setDescription(lines).setFooter({ text: BRAND.footer })] });
   } catch (err) {
     await safeError(interaction, err, 'rbanhistory');
-  }
+ };
 }
 
 async function rwarnHandler(interaction) {
@@ -334,7 +334,7 @@ async function rwarnHandler(interaction) {
     await interaction.editReply({ embeds: [successEmbed(`Advertencia registrada. Caso #${kase.caseNumber}`)] });
   } catch (err) {
     await safeError(interaction, err, 'rwarn');
-  }
+ };
 }
 
 async function rwarningsHandler(interaction) {
@@ -345,12 +345,12 @@ async function rwarningsHandler(interaction) {
       if (!link) {
         safeReply(interaction, '❌ No estás vinculado. Usa /vincular.', true);
         return;
-      }
+     };
       await interaction.deferReply({ ephemeral: true });
       const warns = await listWarns(link.robloxUserId);
       await interaction.editReply({ content: warns.length ? warns.map((w) => `${w.reason} — <t:${Math.floor(w.createdAt/1000)}:R>`).join('\n') : 'Sin advertencias.' });
       return;
-    }
+   };
     if (deny(interaction, 'MODERATION_ROBLOX')) return;
     await interaction.deferReply({ ephemeral: true });
     const robloxUser = await resolveRobloxUser(rawUser);
@@ -358,7 +358,7 @@ async function rwarningsHandler(interaction) {
     await interaction.editReply({ content: warns.length ? warns.map((w) => `${w.reason} — <t:${Math.floor(w.createdAt/1000)}:R>`).join('\n') : 'Sin advertencias.' });
   } catch (err) {
     await safeError(interaction, err, 'rwarnings');
-  }
+ };
 }
 
 async function rkickHandler(interaction) {
@@ -390,7 +390,7 @@ async function rkickHandler(interaction) {
     await interaction.editReply({ embeds: [successEmbed('Kick aplicado (5 min de bloqueo).')] });
   } catch (err) {
     await safeError(interaction, err, 'rkick');
-  }
+ };
 }
 
 async function rplayerHandler(interaction) {
@@ -414,7 +414,7 @@ async function rplayerHandler(interaction) {
     await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle('👤 Perfil').addFields(fields).setFooter({ text: BRAND.footer })] });
   } catch (err) {
     await safeError(interaction, err, 'rplayer');
-  }
+ };
 }
 
 async function rcaseHandler(interaction) {
@@ -427,7 +427,7 @@ async function rcaseHandler(interaction) {
     if (!kase) {
       await interaction.editReply({ content: '❌ Caso no encontrado.' });
       return;
-    }
+   };
 
     const fields = [
       { name: 'Caso', value: `#${kase.caseNumber}` },
@@ -443,7 +443,7 @@ async function rcaseHandler(interaction) {
     await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle('📋 Caso').addFields(fields).setTimestamp(kase.createdAt).setFooter({ text: BRAND.footer })] });
   } catch (err) {
     await safeError(interaction, err, 'rcase');
-  }
+ };
 }
 
 async function dbanHandler(interaction) {
@@ -457,7 +457,7 @@ async function dbanHandler(interaction) {
     if (!canModerate(interaction.user.id, user.id)) {
       safeReply(interaction, '⛔ No puedes moderar a alguien de tu nivel o superior.', true);
       return;
-    }
+   };
 
     if (days) await target.ban({ reason, deleteMessageDays: Math.min(days, 7) });
     else await target.ban({ reason });
@@ -476,7 +476,7 @@ async function dbanHandler(interaction) {
     safeReply(interaction, '✅ Baneo aplicado.', true);
   } catch (err) {
     await safeError(interaction, err, 'dban');
-  }
+ };
 }
 
 async function dunbanHandler(interaction) {
@@ -491,7 +491,7 @@ async function dunbanHandler(interaction) {
     safeReply(interaction, '✅ Desbaneo aplicado.', true);
   } catch (err) {
     await safeError(interaction, err, 'dunban');
-  }
+ };
 }
 
 async function dwarnHandler(interaction) {
@@ -503,7 +503,7 @@ async function dwarnHandler(interaction) {
     if (!canModerate(interaction.user.id, user.id)) {
       safeReply(interaction, '⛔ No puedes moderar a alguien de tu nivel o superior.', true);
       return;
-    }
+   };
 
     await createCase({
       type: 'DISCORD_WARN',
@@ -519,7 +519,7 @@ async function dwarnHandler(interaction) {
     safeReply(interaction, '✅ Advertencia registrada.', true);
   } catch (err) {
     await safeError(interaction, err, 'dwarn');
-  }
+ };
 }
 
 async function dkickHandler(interaction) {
@@ -532,7 +532,7 @@ async function dkickHandler(interaction) {
     if (!canModerate(interaction.user.id, user.id)) {
       safeReply(interaction, '⛔ No puedes moderar a alguien de tu nivel o superior.', true);
       return;
-    }
+   };
 
     await target.kick(reason);
 
@@ -550,7 +550,7 @@ async function dkickHandler(interaction) {
     safeReply(interaction, '✅ Expulsión aplicada.', true);
   } catch (err) {
     await safeError(interaction, err, 'dkick');
-  }
+ };
 }
 
 async function dtimeoutHandler(interaction) {
@@ -564,7 +564,7 @@ async function dtimeoutHandler(interaction) {
     if (!canModerate(interaction.user.id, user.id)) {
       safeReply(interaction, '⛔ No puedes moderar a alguien de tu nivel o superior.', true);
       return;
-    }
+   };
 
     await target.timeout(minutes * 60 * 1000, reason ?? 'Sin motivo');
 
@@ -572,7 +572,7 @@ async function dtimeoutHandler(interaction) {
     safeReply(interaction, '✅ Timeout aplicado.', true);
   } catch (err) {
     await safeError(interaction, err, 'dtimeout');
-  }
+ };
 }
 
 module.exports = {

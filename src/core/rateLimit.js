@@ -3,7 +3,7 @@ class RateLimiter {
     this.maxHits = maxHits;
     this.windowMs = windowMs;
     this.hits = new Map();
-  }
+ };
 
   check(key) {
     const now = Date.now();
@@ -11,22 +11,22 @@ class RateLimiter {
     if (arr.length >= this.maxHits) {
       this.hits.set(key, arr);
       return false;
-    }
+   };
     arr.push(now);
     this.hits.set(key, arr);
     return true;
-  }
+ };
 
   retryAfterMs(key) {
     const arr = this.hits.get(key) ?? [];
     if (arr.length < this.maxHits) return 0;
     return this.windowMs - (Date.now() - arr[0]);
-  }
+ };
 
   reset(key) {
     if (key) this.hits.delete(key);
     else this.hits.clear();
-  }
+ };
 }
 
 const commandLimiter = new RateLimiter(10, 10000);

@@ -14,8 +14,8 @@ function buildUrl(base, path, query) {
   if (query) {
     for (const [k, v] of Object.entries(query)) {
       if (v !== undefined && v !== '') url.searchParams.set(k, v);
-    }
-  }
+   };
+ };
   return url.toString();
 }
 
@@ -36,9 +36,9 @@ async function request(base, path, opts = {}) {
           err.status = 0;
           err.endpoint = url;
           throw err;
-        }
+       };
         headers['x-api-key'] = config.roblox.apiKey;
-      }
+     };
       if (body !== undefined) headers['Content-Type'] = 'application/json';
 
       const res = await fetch(url, {
@@ -50,7 +50,7 @@ async function request(base, path, opts = {}) {
 
       const text = await res.text();
       let json;
-      try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
+      try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text };};
 
       if (res.ok) return json;
 
@@ -62,7 +62,7 @@ async function request(base, path, opts = {}) {
         log.warn({ url, attempt, retryAfter }, 'Roblox rate limit, reintentando');
         await new Promise((r) => setTimeout(r, Math.min(retryAfter, 10) * 1000));
         continue;
-      }
+     };
 
       const err = new Error(msg);
       err.status = res.status;
@@ -74,12 +74,12 @@ async function request(base, path, opts = {}) {
       if (attempt < MAX_RETRIES && err.name === 'AbortError') {
         log.warn({ url, attempt }, 'Timeout Roblox, reintentando');
         continue;
-      }
+     };
       throw err;
     } finally {
       clearTimeout(timer);
-    }
-  }
+   };
+ };
 }
 
 const roblox = {
@@ -101,9 +101,9 @@ class RobloxApiError extends Error {
     this.status = status;
     this.body = body;
     this.endpoint = endpoint;
-  }
-  get isRateLimit() { return this.status === 429; }
-  get isNotFound() { return this.status === 404; }
+ };
+  get isRateLimit() { return this.status === 429;};
+  get isNotFound() { return this.status === 404;};
 }
 
 module.exports = { roblox, RobloxApiError };

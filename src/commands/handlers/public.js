@@ -20,16 +20,16 @@ async function statsHandler(interaction) {
       if (!link) {
         safeReply(interaction, '❌ No estás vinculado. Usa /vincular.', true);
         return;
-      }
+     };
       robloxUserId = link.robloxUserId;
       await interaction.deferReply({ ephemeral: false });
-    }
+   };
 
     const stats = await getPlayerStats(robloxUserId);
     if (!stats) {
       await interaction.editReply({ content: '❌ No hay estadísticas para este usuario. La integración Roblox aún no envía datos.' });
       return;
-    }
+   };
 
     const kd = stats.deaths > 0 ? (stats.kills / stats.deaths).toFixed(2) : stats.kills;
     const fields = [
@@ -44,7 +44,7 @@ async function statsHandler(interaction) {
     await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle('📊 Estadísticas').addFields(fields).setFooter({ text: BRAND.footer })] });
   } catch (err) {
     await safeError(interaction, err, 'stats');
-  }
+ };
 }
 
 async function topHandler(interaction) {
@@ -54,12 +54,12 @@ async function topHandler(interaction) {
     if (entries.length === 0) {
       await interaction.editReply({ content: '❌ No hay datos en el leaderboard.' });
       return;
-    }
+   };
     const lines = entries.map((e, i) => `${i + 1}. \`${e.userId}\` — ${e.score} kills`).join('\n');
     await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle('🏆 Top Kills').setDescription(lines).setFooter({ text: BRAND.footer })] });
   } catch (err) {
     await safeError(interaction, err, 'top');
-  }
+ };
 }
 
 async function leaderboardHandler(interaction) {
@@ -70,12 +70,12 @@ async function leaderboardHandler(interaction) {
     if (entries.length === 0) {
       await interaction.editReply({ content: '❌ No hay datos.' });
       return;
-    }
+   };
     const lines = entries.map((e, i) => `${i + 1}. \`${e.userId}\` — ${e.score}`).join('\n');
     await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle(`📊 Leaderboard (${metric})`).setDescription(lines).setFooter({ text: BRAND.footer })] });
   } catch (err) {
     await safeError(interaction, err, 'leaderboard');
-  }
+ };
 }
 
 async function rankHandler(interaction) {
@@ -92,21 +92,21 @@ async function rankHandler(interaction) {
       if (!link) {
         safeReply(interaction, '❌ No estás vinculado.', true);
         return;
-      }
+     };
       robloxUserId = link.robloxUserId;
       await interaction.deferReply({ ephemeral: false });
-    }
+   };
 
     const entries = await getLeaderboard('DESC', 1000);
     const rank = entries.findIndex((e) => e.userId === robloxUserId) + 1;
     if (rank === 0) {
       await interaction.editReply({ content: '❌ No aparece en el leaderboard.' });
       return;
-    }
+   };
     await interaction.editReply({ content: `🏅 Posición en ranking: #${rank}` });
   } catch (err) {
     await safeError(interaction, err, 'rank');
-  }
+ };
 }
 
 async function perfilHandler(interaction) {
@@ -115,7 +115,7 @@ async function perfilHandler(interaction) {
     if (!link) {
       safeReply(interaction, '❌ No estás vinculado. Usa /vincular.', true);
       return;
-    }
+   };
     await interaction.deferReply({ ephemeral: false });
 
     const stats = await getPlayerStats(link.robloxUserId);
@@ -129,12 +129,12 @@ async function perfilHandler(interaction) {
         { name: 'Deaths', value: String(stats.deaths ?? 0), inline: true },
         { name: 'Wins', value: String(stats.wins ?? 0), inline: true },
       );
-    }
+   };
 
     await interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle('👤 Tu perfil').addFields(fields).setFooter({ text: BRAND.footer })] });
   } catch (err) {
     await safeError(interaction, err, 'perfil');
-  }
+ };
 }
 
 async function vincularHandler(interaction) {
@@ -150,7 +150,7 @@ async function vincularHandler(interaction) {
     });
   } catch (err) {
     await safeError(interaction, err, 'vincular');
-  }
+ };
 }
 
 async function desvincularHandler(interaction) {
@@ -159,7 +159,7 @@ async function desvincularHandler(interaction) {
     await interaction.reply({ embeds: [successEmbed('Vínculo eliminado.')], ephemeral: true });
   } catch (err) {
     await safeError(interaction, err, 'desvincular');
-  }
+ };
 }
 
 async function serverHandler(interaction) {
@@ -177,7 +177,7 @@ async function serverHandler(interaction) {
     });
   } catch (err) {
     await safeError(interaction, err, 'server');
-  }
+ };
 }
 
 module.exports = {

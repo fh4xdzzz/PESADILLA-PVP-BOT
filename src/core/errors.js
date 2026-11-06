@@ -8,10 +8,10 @@ async function safeReply(interaction, content, ephemeral = true) {
       await interaction.editReply({ content });
     } else {
       await interaction.reply({ content, ephemeral });
-    }
+   };
   } catch (err) {
     log.warn({ err }, 'No se pudo responder la interacción');
-  }
+ };
 }
 
 async function safeError(interaction, err, context) {
@@ -27,7 +27,7 @@ async function embedReply(interaction, embed, ephemeral = true) {
   const payload = { embeds: [embed], ephemeral };
   if (interaction.deferred || interaction.replied) {
     return interaction.editReply(payload).then(() => {}).catch(() => {});
-  }
+ };
   return interaction.reply(payload).then(() => {}).catch(() => {});
 }
 

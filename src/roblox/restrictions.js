@@ -8,7 +8,7 @@ function universeBase() {
     const err = new Error('ROBLOX_UNIVERSE_ID no configurado');
     err.status = 0;
     throw err;
-  }
+ };
   return `/cloud/v2/universes/${config.roblox.universeId}/user-restrictions`;
 }
 
@@ -17,7 +17,7 @@ function parseDurationToSeconds(input) {
   if (!m) {
     const n = Number(input);
     return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
-  }
+ };
   const n = Number(m[1]);
   const mult = { s: 1, m: 60, h: 3600, d: 86400, w: 604800 }[m[2]];
   return n * mult;
@@ -32,12 +32,12 @@ function enforceLimiters(userId) {
     const err = new Error('El bot está realizando demasiadas llamadas a Roblox, espera un momento');
     err.status = 429;
     throw err;
-  }
+ };
   if (!robloxRestrictionLimiter.check(`user:${userId}`)) {
     const err = new Error('Límite de Roblox alcanzado para este usuario (máx 2 sanciones/minuto). Espera ~60s.');
     err.status = 429;
     throw err;
-  }
+ };
 }
 
 async function setUserRestriction(params) {
@@ -57,7 +57,7 @@ async function setUserRestriction(params) {
   if (params.idempotencyKey) {
     query['idempotencyKey.key'] = params.idempotencyKey;
     query['idempotencyKey.firstSent'] = new Date().toISOString();
-  }
+ };
 
   return roblox.cloud(`${universeBase()}/${params.userId}`, {
     method: 'PATCH',
@@ -80,7 +80,7 @@ async function getUserRestriction(userId) {
   } catch (err) {
     if (err instanceof RobloxApiError && err.isNotFound) return null;
     throw err;
-  }
+ };
 }
 
 async function listUserRestrictions(maxPageSize = 50) {

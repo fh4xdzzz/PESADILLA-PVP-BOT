@@ -19,7 +19,7 @@ async function audit(entry) {
     });
   } catch (err) {
     log.error({ err, entry }, 'Fallo al escribir audit log');
-  }
+ };
 }
 
 module.exports = { audit };

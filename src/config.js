@@ -1,10 +1,10 @@
-import 'dotenv/config';
+require('dotenv').config();
 
 function list(name) {
   return (process.env[name] || '').split(',').map((s) => s.trim()).filter(Boolean);
 }
 
-const config = {
+module.exports.config = {
   discord: {
     token: process.env.DISCORD_TOKEN || '',
     clientId: process.env.DISCORD_CLIENT_ID || '',
@@ -31,25 +31,23 @@ const config = {
   linkSecret: process.env.LINK_SECRET || 'change-me-link-secret-32chars!!',
 };
 
-function validateConfig() {
+module.exports.validateConfig = function() {
   const missing = [];
-  if (!config.discord.token) missing.push('DISCORD_TOKEN');
-  if (!config.discord.clientId) missing.push('DISCORD_CLIENT_ID');
-  if (!config.roblox.apiKey) missing.push('SPARKEDHOST_API_KEY');
-  if (!config.roblox.universeId) missing.push('SPARKEDHOST_SERVER_ID');
+  if (!module.exports.config.discord.token) missing.push('DISCORD_TOKEN');
+  if (!module.exports.config.discord.clientId) missing.push('DISCORD_CLIENT_ID');
+  if (!module.exports.config.roblox.apiKey) missing.push('ROBLOX_API_KEY');
+  if (!module.exports.config.roblox.universeId) missing.push('ROBLOX_UNIVERSE_ID');
   if (missing.length) {
     console.error('❌ Faltan variables en .env:', missing.join(', '));
     console.error('Copia .env.example a .env y complétalas.');
     process.exit(1);
-  }
-}
+ };
+};
 
-function allStaffIds() {
+module.exports.allStaffIds = function() {
   const set = new Set();
-  for (const level of Object.values(config.staff)) {
+  for (const level of Object.values(module.exports.config.staff)) {
     for (const id of level) set.add(id);
-  }
+ };
   return set;
-}
-
-export { config, validateConfig, allStaffIds };
+};

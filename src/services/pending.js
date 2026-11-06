@@ -17,7 +17,7 @@ function getPending(id) {
   if (p && p.expiresAt < Date.now()) {
     store.delete(id);
     return undefined;
-  }
+ };
   return p;
 }
 

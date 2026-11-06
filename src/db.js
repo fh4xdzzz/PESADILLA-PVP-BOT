@@ -1,22 +1,22 @@
-import { PrismaClient } from '@prisma/client';
-import { config } from './config.js';
-import { log } from './logger.js';
+const { PrismaClient } = require('@prisma/client');
+const { config } = require('./config.js');
+const { log } = require('./logger.js');
 
 const globalForPrisma = globalThis;
 
-export const prisma =
+module.exports.prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: config.isProd ? ['warn', 'error'] : ['warn', 'error'],
   });
 
-if (!config.isProd) globalForPrisma.prisma = prisma;
+if (!config.isProd) globalForPrisma.prisma = module.exports.prisma;
 
-export async function connectDb() {
-  await prisma.$connect();
+module.exports.connectDb = async () => {
+  await module.exports.prisma.$connect();
   log.info('Base de datos conectada');
-}
+};
 
-export async function disconnectDb() {
-  await prisma.$disconnect();
-}
+module.exports.disconnectDb = async () => {
+  await module.exports.prisma.$disconnect();
+};

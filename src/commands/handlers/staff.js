@@ -25,7 +25,7 @@ function deny(interaction, perm) {
   if (!hasPermission(interaction.user.id, perm)) {
     safeReply(interaction, '⛔ No tienes permisos para este comando.', true);
     return true;
-  }
+ };
   return false;
 }
 
@@ -59,7 +59,7 @@ async function announceHandler(interaction) {
     await target.send({ embeds: [embed] });
     await audit({ actorId: interaction.user.id, action: 'announce', guildId: interaction.guildId });
     await interaction.editReply({ embeds: [successEmbed('Anuncio publicado.')] });
-  } catch (err) { await safeError(interaction, err, 'announce'); }
+  } catch (err) { await safeError(interaction, err, 'announce');};
 }
 
 async function gameHandler(interaction) {
@@ -71,7 +71,7 @@ async function gameHandler(interaction) {
         .setFooter({ text: BRAND.footer })],
       ephemeral: false,
     });
-  } catch (err) { await safeError(interaction, err, 'game'); }
+  } catch (err) { await safeError(interaction, err, 'game');};
 }
 
 async function statusHandler(interaction) {
@@ -85,7 +85,7 @@ async function statusHandler(interaction) {
         .setFooter({ text: BRAND.footer }).setTimestamp()],
       ephemeral: false,
     });
-  } catch (err) { await safeError(interaction, err, 'status'); }
+  } catch (err) { await safeError(interaction, err, 'status');};
 }
 
 async function updateHandler(interaction) {
@@ -99,7 +99,7 @@ async function updateHandler(interaction) {
         .setFooter({ text: `${BRAND.footer} • ${interaction.user.tag}` }).setTimestamp()],
     });
     await interaction.editReply({ embeds: [successEmbed('Update publicado.')] });
-  } catch (err) { await safeError(interaction, err, 'update'); }
+  } catch (err) { await safeError(interaction, err, 'update');};
 }
 
 async function sneakpeekHandler(interaction) {
@@ -112,7 +112,7 @@ async function sneakpeekHandler(interaction) {
         .setFooter({ text: BRAND.footer }).setTimestamp()],
     });
     await interaction.editReply({ embeds: [successEmbed('Sneak peek publicado.')] });
-  } catch (err) { await safeError(interaction, err, 'sneakpeek'); }
+  } catch (err) { await safeError(interaction, err, 'sneakpeek');};
 }
 
 async function codesHandler(interaction) {
@@ -128,7 +128,7 @@ async function codesHandler(interaction) {
         : 'No hay códigos activos por ahora. ¡Atento a anuncios!',
     );
     await interaction.editReply({ embeds: [embed] });
-  } catch (err) { await safeError(interaction, err, 'codes'); }
+  } catch (err) { await safeError(interaction, err, 'codes');};
 }
 
 async function codecreateHandler(interaction) {
@@ -153,7 +153,7 @@ async function codecreateHandler(interaction) {
     });
     await audit({ actorId: interaction.user.id, action: 'code.create', targetId: code, guildId: interaction.guildId });
     await interaction.editReply({ embeds: [successEmbed(`Código \`${code}\` creado.`)] });
-  } catch (err) { await safeError(interaction, err, 'codecreate'); }
+  } catch (err) { await safeError(interaction, err, 'codecreate');};
 }
 
 async function codedeleteHandler(interaction) {
@@ -162,10 +162,10 @@ async function codedeleteHandler(interaction) {
     const code = interaction.options.getString('codigo', true).toUpperCase();
     await interaction.deferReply({ ephemeral: true });
     const res = await prisma.gameCode.updateMany({ where: { code }, data: { active: false } });
-    if (res.count === 0) { await interaction.editReply({ content: `Código \`${code}\` no encontrado.` }); return; }
+    if (res.count === 0) { await interaction.editReply({ content: `Código \`${code}\` no encontrado.` }); return;};
     await audit({ actorId: interaction.user.id, action: 'code.delete', targetId: code, guildId: interaction.guildId });
     await interaction.editReply({ embeds: [successEmbed(`Código \`${code}\` desactivado.`)] });
-  } catch (err) { await safeError(interaction, err, 'codedelete'); }
+  } catch (err) { await safeError(interaction, err, 'codedelete');};
 }
 
 async function dailyshopHandler(interaction) {
@@ -178,7 +178,7 @@ async function dailyshopHandler(interaction) {
         .setDescription(items).setFooter({ text: `${BRAND.footer} • ${interaction.user.tag}` }).setTimestamp()],
     });
     await interaction.editReply({ embeds: [successEmbed('Tienda publicada.')] });
-  } catch (err) { await safeError(interaction, err, 'dailyshop'); }
+  } catch (err) { await safeError(interaction, err, 'dailyshop');};
 }
 
 async function eventHandler(interaction) {
@@ -204,8 +204,8 @@ async function eventHandler(interaction) {
           .setDescription(list.length ? list.map((e) => `• **${e.title}** — ${e.fecha}`).join('\n') : 'No hay eventos programados.')
           .setFooter({ text: BRAND.footer })],
       });
-    }
-  } catch (err) { await safeError(interaction, err, 'event'); }
+   };
+  } catch (err) { await safeError(interaction, err, 'event');};
 }
 
 async function pollHandler(interaction) {
@@ -233,7 +233,7 @@ async function pollHandler(interaction) {
       components: [row],
     });
     await interaction.editReply({ embeds: [successEmbed('Encuesta publicada.')] });
-  } catch (err) { await safeError(interaction, err, 'poll'); }
+  } catch (err) { await safeError(interaction, err, 'poll');};
 }
 
 async function giveawayHandler(interaction) {
@@ -265,22 +265,22 @@ async function giveawayHandler(interaction) {
       await prisma.giveaway.update({ where: { id: g.id }, data: { messageId: msg.id } });
       await interaction.editReply({ embeds: [successEmbed(`Sorteo creado (ID: \`${g.id.slice(-8)}\`).`)] });
       return;
-    }
+   };
 
     const idInput = interaction.options.getString('id', true);
     const g = await prisma.giveaway.findFirst({ where: { id: { endsWith: idInput }, guildId: interaction.guildId } });
-    if (!g) { await interaction.editReply({ content: 'Sorteo no encontrado.' }); return; }
+    if (!g) { await interaction.editReply({ content: 'Sorteo no encontrado.' }); return;};
 
     if (sub === 'end') {
       const winners = await pickWinners(g.id, g.winnersCount);
       await endGiveaway(g.id, winners);
       await interaction.editReply({ content: `🏁 Sorteo finalizado. Ganadores: ${winners.map((w) => `<@${w}>`).join(', ') || 'ninguno'}` });
       return;
-    }
+   };
     const winners = await pickWinners(g.id, g.winnersCount);
     await prisma.giveaway.update({ where: { id: g.id }, data: { winners: JSON.parse(JSON.stringify(winners)) } });
     await interaction.editReply({ content: `🔄 Nuevo sorteo: ${winners.map((w) => `<@${w}>`).join(', ') || 'ninguno'}` });
-  } catch (err) { await safeError(interaction, err, 'giveaway'); }
+  } catch (err) { await safeError(interaction, err, 'giveaway');};
 }
 
 async function tournamentHandler(interaction) {
@@ -293,15 +293,15 @@ async function tournamentHandler(interaction) {
       const name = interaction.options.getString('nombre', true);
       const max = interaction.options.getInteger('maxjugadores') ?? 8;
       const existing = await getActiveTournament(interaction.guildId);
-      if (existing) { await interaction.editReply({ content: `Ya hay un torneo activo: **${existing.name}**` }); return; }
+      if (existing) { await interaction.editReply({ content: `Ya hay un torneo activo: **${existing.name}**` }); return;};
       const t = await createTournament({ guildId: interaction.guildId, name, maxPlayers: max, createdBy: interaction.user.id });
       await interaction.editReply({ embeds: [successEmbed(`Torneo **${name}** creado (ID: \`${t.id.slice(-8)}\`). Los jugadores pueden apuntarse con \`/tournament register\`.`)] });
       return;
-    }
+   };
 
     if (sub === 'register') {
       const t = await getActiveTournament(interaction.guildId);
-      if (!t) { await interaction.editReply({ content: 'No hay torneo activo en registro.' }); return; }
+      if (!t) { await interaction.editReply({ content: 'No hay torneo activo en registro.' }); return;};
       const ign = interaction.options.getString('ign');
       const link = await prisma.playerLink.findUnique({ where: { discordUserId: interaction.user.id } });
       await registerParticipant(t.id, {
@@ -311,11 +311,11 @@ async function tournamentHandler(interaction) {
       });
       await interaction.editReply({ content: `✅ Inscrito en **${t.name}**. Participantes: ${t.participants.length + 1}/${t.maxPlayers}` });
       return;
-    }
+   };
 
     if (sub === 'list') {
       const t = await getActiveTournament(interaction.guildId);
-      if (!t) { await interaction.editReply({ content: 'No hay torneo activo.' }); return; }
+      if (!t) { await interaction.editReply({ content: 'No hay torneo activo.' }); return;};
       const names = t.participants.map((p) => p.ign ?? p.discordUserId ?? p.robloxUserId).join(', ') || 'ninguno';
       await interaction.editReply({
         embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle(`🏆 ${t.name}`)
@@ -323,7 +323,7 @@ async function tournamentHandler(interaction) {
           .setFooter({ text: BRAND.footer })],
       });
       return;
-    }
+   };
 
     const user = interaction.options.getUser('usuario', true);
     const placement = interaction.options.getInteger('colocacion', true);
@@ -331,15 +331,15 @@ async function tournamentHandler(interaction) {
       where: { guildId: interaction.guildId, status: { in: ['REGISTRATION', 'IN_PROGRESS'] } },
       include: { participants: true },
     });
-    if (!t) { await interaction.editReply({ content: 'No hay torneo activo.' }); return; }
+    if (!t) { await interaction.editReply({ content: 'No hay torneo activo.' }); return;};
     const p = t.participants.find((x) => x.discordUserId === user.id);
-    if (!p) { await interaction.editReply({ content: 'Ese usuario no está inscrito.' }); return; }
+    if (!p) { await interaction.editReply({ content: 'Ese usuario no está inscrito.' }); return;};
     await prisma.tournamentParticipant.update({ where: { id: p.id }, data: { placement, eliminated: placement > 1 } });
     if (placement === 1) {
       await prisma.tournament.update({ where: { id: t.id }, data: { status: 'FINISHED', endedAt: new Date() } });
-    }
+   };
     await interaction.editReply({ content: `🏅 <@${user.id}> registrado en posición #${placement}.` });
-  } catch (err) { await safeError(interaction, err, 'tournament'); }
+  } catch (err) { await safeError(interaction, err, 'tournament');};
 }
 
 async function configHandler(interaction) {
@@ -347,7 +347,7 @@ async function configHandler(interaction) {
     if (!hasPermission(interaction.user.id, 'CONFIG')) {
       await safeReply(interaction, '⛔ Solo ADMIN/OWNER pueden configurar el bot.', true);
       return;
-    }
+   };
     const sub = interaction.options.getSubcommand();
     await interaction.deferReply({ ephemeral: true });
 
@@ -357,14 +357,14 @@ async function configHandler(interaction) {
       await setSetting(key, value, interaction.user.id);
       await interaction.editReply({ embeds: [successEmbed(`\`${key}\` = \`${value}\``)] });
       return;
-    }
+   };
 
     const settings = await prisma.botSetting.findMany();
     const lines = settings.map((s) => `\`${s.key}\` = \`${s.value}\``).join('\n') || 'Sin ajustes.';
     await interaction.editReply({
       embeds: [new EmbedBuilder().setColor(BRAND.color).setTitle('⚙️ Configuración').setDescription(lines.slice(0, 4000)).setFooter({ text: BRAND.footer })],
     });
-  } catch (err) { await safeError(interaction, err, 'config'); }
+  } catch (err) { await safeError(interaction, err, 'config');};
 }
 
 async function ticketPanelHandler(interaction) {
@@ -384,7 +384,7 @@ async function ticketPanelHandler(interaction) {
     );
     await channel.send({ embeds: [embed], components: [row] });
     await interaction.reply({ content: 'Panel de tickets publicado.', ephemeral: true });
-  } catch (err) { await safeError(interaction, err, 'ticket panel'); }
+  } catch (err) { await safeError(interaction, err, 'ticket panel');};
 }
 
 async function ticketCloseHandler(interaction) {
@@ -392,11 +392,11 @@ async function ticketCloseHandler(interaction) {
     if (deny(interaction, 'TICKETS')) return;
     const channel = interaction.options.getChannel('canal', true);
     const ticket = await getTicketByChannel(channel.id);
-    if (!ticket) { await safeReply(interaction, 'No hay ticket abierto en ese canal.', true); return; }
+    if (!ticket) { await safeReply(interaction, 'No hay ticket abierto en ese canal.', true); return;};
     await closeTicket(ticket.id, interaction.user.id);
     await audit({ actorId: interaction.user.id, action: 'ticket.close', targetType: 'ticket', targetId: ticket.id, guildId: interaction.guildId });
     await safeReply(interaction, `Ticket #${ticket.id.slice(-6)} cerrado.`, true);
-  } catch (err) { await safeError(interaction, err, 'ticket close'); }
+  } catch (err) { await safeError(interaction, err, 'ticket close');};
 }
 
 async function ticketClaimHandler(interaction) {
@@ -404,11 +404,11 @@ async function ticketClaimHandler(interaction) {
     if (deny(interaction, 'TICKETS')) return;
     const channel = interaction.options.getChannel('canal', true);
     const ticket = await getTicketByChannel(channel.id);
-    if (!ticket) { await safeReply(interaction, 'No hay ticket abierto en ese canal.', true); return; }
+    if (!ticket) { await safeReply(interaction, 'No hay ticket abierto en ese canal.', true); return;};
     await claimTicket(ticket.id, interaction.user.id);
     await audit({ actorId: interaction.user.id, action: 'ticket.claim', targetType: 'ticket', targetId: ticket.id, guildId: interaction.guildId });
     await safeReply(interaction, `Ticket reclamado por <@${interaction.user.id}>.`, true);
-  } catch (err) { await safeError(interaction, err, 'ticket claim'); }
+  } catch (err) { await safeError(interaction, err, 'ticket claim');};
 }
 
 async function openTicketChannel(interaction, category) {
@@ -421,7 +421,7 @@ async function openTicketChannel(interaction, category) {
   if (open.length >= 1) {
     await interaction.reply({ content: 'Ya tienes un ticket abierto. Espera a que sea atendido o cerrado.', ephemeral: true });
     return;
-  }
+ };
 
   await interaction.deferReply({ ephemeral: true });
 

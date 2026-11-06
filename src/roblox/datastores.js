@@ -14,7 +14,7 @@ function requireUniverse() {
     const err = new Error('ROBLOX_UNIVERSE_ID no configurado');
     err.status = 0;
     throw err;
-  }
+ };
 }
 
 async function getDataStoreEntry(datastore, key) {
@@ -24,7 +24,7 @@ async function getDataStoreEntry(datastore, key) {
   } catch (err) {
     if (err instanceof RobloxApiError && err.isNotFound) return null;
     throw err;
-  }
+ };
 }
 
 async function setDataStoreEntry(datastore, key, value) {
@@ -58,7 +58,7 @@ async function getLeaderboard(sortOrder = 'DESC', maxEntries = 10) {
   } catch (err) {
     if (err instanceof RobloxApiError && err.isNotFound) return [];
     throw err;
-  }
+ };
 }
 
 async function getPlayerStats(robloxUserId) {
@@ -68,7 +68,7 @@ async function getPlayerStats(robloxUserId) {
     return typeof entry.value === 'string' ? JSON.parse(entry.value) : entry.value;
   } catch {
     return null;
-  }
+ };
 }
 
 async function listAllPlayerStats(maxEntries = 100) {

@@ -30,7 +30,7 @@ async function pickWinners(giveawayId, count) {
   for (let i = 0; i < Math.min(count, pool.length); i++) {
     const idx = Math.floor(Math.random() * pool.length);
     winners.push(pool.splice(idx, 1)[0]);
-  }
+ };
   return winners;
 }
 

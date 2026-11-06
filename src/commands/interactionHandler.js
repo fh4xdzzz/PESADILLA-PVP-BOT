@@ -50,7 +50,7 @@ async function handleInteraction(interaction) {
       const handler = map[cmd];
       if (handler) await handler(interaction);
       else await interaction.reply({ content: 'Comando no implementado.', ephemeral: true });
-    }
+   };
 
     if (interaction.isButton()) {
       const id = interaction.customId;
@@ -81,20 +81,20 @@ async function handleInteraction(interaction) {
         const ticketId = id.split(':')[2];
         await interaction.deferReply({ ephemeral: true });
         await ticketCloseHandler(interaction);
-      }
-    }
+     };
+   };
 
     if (interaction.isStringSelectMenu()) {
       if (interaction.customId === 'ticket:select-category') {
         const category = interaction.values[0];
         await openTicketChannel(interaction, category);
-      }
-    }
+     };
+   };
   } catch (err) {
     log.error({ err, interaction: { id: interaction.id, type: interaction.type } }, 'Error en handler de interacción');
     const { safeError } = require('../core/errors.js');
     await safeError(interaction, err, 'interaction');
-  }
+ };
 }
 
 module.exports = { handleInteraction };

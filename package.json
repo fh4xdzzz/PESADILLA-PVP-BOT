@@ -2,7 +2,7 @@
   "name": "pesadilla-pvp-bot",
   "version": "2.0.0",
   "description": "Bot oficial de PESADILLA PVP - Discord + Roblox Open Cloud",
-  "type": "module",
+  "type": "commonjs",
   "engines": {
     "node": ">=20"
   },
