@@ -46,9 +46,24 @@ async function handleMatchIngest(request,env) {
 
 const titles={'/':'Inicio','/jugadores':'Jugadores','/partidas':'Partidas','/reportes':'Reportes','/baneos':'Baneos','/discord':'Discord'};
 async function stats(env) {if(!env.DB) return null;try {const names=['players','matches','reports','sanctions'];const results=await Promise.all(names.map(n=>env.DB.prepare(`SELECT COUNT(*) AS total FROM ${n}`).first()));return Object.fromEntries(names.map((n,i)=>[n,results[i]?.total??0]));}catch{return null;}}
+
+async function recentRows(env,path) {
+ if (!env.DB || (path!='/jugadores' && path!='/partidas')) return '';
+ try {
+  const sql=path==='/jugadores'
+   ? 'SELECT p.roblox_user_id,p.username,COALESCE(SUM(mp.kills),0) kills,COALESCE(SUM(mp.deaths),0) deaths,COALESCE(SUM(mp.wins),0) wins FROM players p LEFT JOIN match_participants mp ON p.roblox_user_id=mp.roblox_user_id GROUP BY p.roblox_user_id ORDER BY wins DESC,kills DESC LIMIT 30'
+   : 'SELECT m.match_id,m.started_at,COUNT(mp.roblox_user_id) participants FROM matches m LEFT JOIN match_participants mp ON m.match_id=mp.match_id GROUP BY m.match_id ORDER BY m.started_at DESC LIMIT 30';
+  const result=await env.DB.prepare(sql).all(), rows=result.results||[];
+  const items=rows.map(x=>path==='/jugadores'
+   ? '<p><strong>'+htmlEscape(x.username)+'</strong> · '+htmlEscape(x.roblox_user_id)+' · Kills '+Number(x.kills)+' · Muertes '+Number(x.deaths)+' · Victorias '+Number(x.wins)+'</p>'
+   : '<p><strong>'+htmlEscape(x.match_id)+'</strong> · '+htmlEscape(x.started_at)+' · '+Number(x.participants)+' jugadores</p>').join('');
+  return '<div class="card"><h2>Registros reales</h2>'+(items||'<p>Sin registros todavía.</p>')+'</div>';
+ }catch{return '<div class="card"><p>No se pudieron consultar los registros.</p></div>';}
+}
 async function page(path,env,user) {const title=titles[path];const labels={players:'Jugadores',matches:'Partidas',reports:'Reportes',sanctions:'Sanciones'};const data=await stats(env);const metrics=Object.entries(labels).map(([k,v])=>`<div class="card"><div class="tag">${v}</div><div class="metric">${data?.[k]??'—'}</div><div class="muted">${data?'Registros guardados':'Sin base de datos conectada'}</div></div>`).join('');
 const desc={'/':'Resumen central de la experiencia y los servidores Discord.','/jugadores':'Perfiles de jugadores y estadísticas individuales.','/partidas':'Historial de cada enfrentamiento y sus participantes.','/reportes':'Denuncias, evidencias y seguimiento de casos.','/baneos':'Consulta de sanciones y futuras acciones administrativas.','/discord':'Futura configuración de roles, canales, tickets y anuncios.'};
-const main=path==='/'?`<div class="grid">${metrics}</div>`:`<div class="card"><h2>Sin registros disponibles</h2><p>La conexión con los datos reales de ${title} se implementará en la siguiente fase. Ningún dato de demostración representa jugadores o partidas reales.</p></div>`;
+const recent=await recentRows(env,path);
+const main=path==='/'?`<div class="grid">${metrics}</div>`:recent||`<div class="card"><h2>Sin registros disponibles</h2><p>La conexión con los datos reales de ${title} se implementará en la siguiente fase. Ningún dato de demostración representa jugadores o partidas reales.</p></div>`;
 return layout(title,`<h1>${title}</h1><p>${desc[path]}</p>${main}<div class="notice"><strong>Modo seguro de solo lectura</strong><p>Las acciones para banear jugadores o cambiar Discord se habilitarán al completar la autorización, auditoría y conexión con las APIs oficiales.</p></div>`,user);
 }
 export default {
