@@ -1,6 +1,6 @@
 const { REST, Routes } = require('discord.js');
 const { config } = require('../config.js');
-const { all } = require('./commands/index.js');
+const { all } = require('../commands/index.js');
 const { log } = require('../logger.js');
 
 async function registerCommands(clientId = config.discord.clientId, token = config.discord.token) {
