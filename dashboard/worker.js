@@ -1,9 +1,8 @@
+import { liveMatchAPI } from './live-matches.js';
 import { controlPage,controlWrite,controlService } from './control-center.js';
 import { handleStaffAdmin } from './staff-roles.js';
 import { requestTheater, claimTheater } from './replay-theater.js';
 import { ingestReplay, readReplayForRoblox, ingestReplayEvents, readReplayEventsForRoblox } from './replay-api.js';
-import { replayPage } from './replay-view.js';
-import { replayClientSource } from './replay-client.js';
 import { ingestReport, showReports, showReportDetail, updateReport } from './reports.js';
 import { renderDashboard, renderShell } from './pro-ui.js';
 const encoder = new TextEncoder();
@@ -86,7 +85,7 @@ if(path==='/api/ingest/replay/events' && method==='GET')return readReplayEventsF
 if(path==='/api/ingest/replay/claim' && method==='GET')return claimTheater(request,env,u);
 if(path.startsWith('/api/ingest/admin/'))return handleStaffAdmin(request,env,u);
 if(path==='/api/sync/discord'||path.startsWith('/api/ingest/moderation/'))return controlService(request,env,u);
-if(path==='/assets/replay-client.js' && method==='GET')return new Response(replayClientSource,{headers:{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}});
+if(path.startsWith('/api/ingest/live/'))return liveMatchAPI(request,env,u);
 if(method!=='GET' && !(method==='POST' && (path==='/discord'||path==='/moderacion')))return response('Método no permitido',405,{'Allow':'GET, POST'});
 if(path==='/health')return Response.json({ok:true,service:'pesadilla-pvp-dashboard'});
 const origin=env.APP_BASE_URL;
