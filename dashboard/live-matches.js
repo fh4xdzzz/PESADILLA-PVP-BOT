@@ -63,6 +63,13 @@ export async function liveMatchAPI(request,env,url){
    }
    return respond({ok:true,matches,staleAfterSeconds:45});
   }
+  if(path==='/api/ingest/live/history'&&request.method==='GET'){
+   const uid=url.searchParams.get('userId');
+   if(!UID.test(uid||''))return respond({ok:false,error:'invalid_user'},400);
+   const page=Math.min(1000,Math.max(1,Number.parseInt(url.searchParams.get('page')||'1',10)||1));
+   const rows=(await env.DB.prepare("SELECT m.match_id,m.server_job_id,m.started_at,m.ended_at,m.status,mp.kills,mp.deaths,mp.wins FROM matches m JOIN match_participants mp ON mp.match_id=m.match_id WHERE mp.roblox_user_id=? ORDER BY m.started_at DESC LIMIT 51 OFFSET ?").bind(uid,(page-1)*50).all()).results||[];
+   return respond({ok:true,userId:uid,page,hasMore:rows.length>50,matches:rows.slice(0,50).map(x=>({matchId:x.match_id,serverJobId:x.server_job_id,startedAt:x.started_at,endedAt:x.ended_at,status:x.status,kills:Number(x.kills),deaths:Number(x.deaths),wins:Number(x.wins)}))});
+  }
   if(path==='/api/ingest/live/target'&&request.method==='GET'){
    const matchId=url.searchParams.get('matchId'),userId=url.searchParams.get('userId');
    if(!ID.test(matchId)||!UID.test(userId))return respond({ok:false,error:'invalid_request'},400);
