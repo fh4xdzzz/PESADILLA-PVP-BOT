@@ -232,9 +232,9 @@ const staffBuilders = [
     .addSubcommand((s) => s.setName('panel').setDescription('[STAFF] Publicar panel')
       .addChannelOption((o) => o.setName('canal').setDescription('Canal').setRequired(false)))
     .addSubcommand((s) => s.setName('close').setDescription('[STAFF] Cerrar ticket')
-      .addChannelOption((o) => o.setName('canal').setDescription('Canal del ticket').setRequired(true)))
+      .addChannelOption((o) => o.setName('canal').setDescription('Canal del ticket').setRequired(false)))
     .addSubcommand((s) => s.setName('claim').setDescription('[STAFF] Reclamar ticket')
-      .addChannelOption((o) => o.setName('canal').setDescription('Canal del ticket').setRequired(true))),
+      .addChannelOption((o) => o.setName('canal').setDescription('Canal del ticket').setRequired(false))),
 ];
 
 module.exports = { moderationBuilders, publicBuilders, staffBuilders };
