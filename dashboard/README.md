@@ -1,46 +1,59 @@
-# PESADILLA PVP — Dashboard (fase 1)
+# PESADILLA PVP — Dashboard gratuito (Cloudflare Workers + D1)
 
-Dashboard web **separado** del bot de Discord en SparkedHost. **No modifica** los comandos existentes, la base de datos SQLite ni los archivos del bot.
+Panel web inicial en una rama separada. **No modifica ni reinicia** el bot que está en SparkedHost. Coste obligatorio de hosting: **US$0 si se mantiene dentro de los límites gratuitos de Cloudflare**. Los límites de uso pueden suspender temporalmente el acceso cuando se alcanzan.
 
-## Ya incluido
+## Estado actual
 
-- Servidor HTTP Node.js sin dependencias externas adicionales, compatible con Railway.
-- Login mediante **Discord OAuth2**, con allowlist estricta por ID de administrador.
-- Cookies de sesión HMAC firmadas, HttpOnly, SameSite=Lax y Secure cuando se usa HTTPS.
-- Protección de rutas privadas; API de lectura con estados vacíos **explícitos** (no datos ficticios).
-- Diseño responsive para Resumen, Partidas, Jugadores, Reportes, Baneos y Discord.
-- Endpoint de salud `/health`.
+- Dashboard responsive, temas oscuros y navegación: Inicio, Jugadores, Partidas, Reportes, Baneos, Discord.
+- Login real con Discord OAuth2 (`identify`) y lista autorizada por IDs de Discord.
+- Sesión firmada HMAC con expiración de 8 horas, cookies HttpOnly/Secure/SameSite=Lax.
+- API privada `/api/summary`, y endpoint público de comprobación `/health`.
+- Base de datos D1 opcional: script SQL con tablas de jugadores, partidas, participantes, reportes, sanciones y auditorías.
+- Sin datos inventados: muestra — sin base de datos y 0 cuando las tablas están creadas vacías.
+- Acciones de modificación **deshabilitadas**, pendiente de controles de autorización, auditoría y API de Roblox/Discord.
 
-**IMPORTANTE:** Esto es una base funcional, no un sistema ya conectado a Roblox ni a Discord para editar configuraciones. Los botones de escritura permanecen deshabilitados hasta implementar persistencia, autorización fina, protección CSRF y las integraciones oficiales. No hay datos de partidas/reportes todavía.
+## Publicar en Cloudflare Workers (Free)
 
-## Despliegue en Railway
+1. Crear una cuenta gratuita de Cloudflare y un Worker.
+2. Conectar este repositorio GitHub a Workers Builds, usando como directorio raíz `dashboard`, o desplegar localmente con CLI:
+   ```bash
+   cd dashboard
+   npm install
+   npx wrangler login
+   npm run deploy
+   ```
+3. Copiar la URL `https://...workers.dev` del Worker y añadirla en las variables como `APP_BASE_URL` (sin barra final).
+4. En Discord Developer Portal > OAuth2 > Redirects, registrar **exactamente** `https://TU_WORKER.workers.dev/auth/callback`.
+5. En Cloudflare > Worker > Settings > Variables and Secrets, configurar:
+   - `APP_BASE_URL`: origen HTTPS real del Worker.
+   - `DISCORD_CLIENT_ID`: Application ID del bot existente.
+   - `DISCORD_CLIENT_SECRET`: Client Secret del OAuth2 de la aplicación; mantener secreto.
+   - `DASHBOARD_ADMIN_IDS`: IDs numéricos de Discord de administradores, separados por coma.
+   - `SESSION_SECRET`: cadena aleatoria de mínimo 32 caracteres.
+6. Volver a desplegar si es necesario, entrar por `/login`, y probar `/health`.
 
-1. Crea un proyecto en [Railway](https://railway.com/) y vincula este repositorio.
-2. Crea un servicio desde la rama de la funcionalidad cuando esté revisada (o fusiona el PR).
-3. Configura el **Root Directory** del servicio a `/dashboard`.
-4. En el [Discord Developer Portal](https://discord.com/developers/applications), agrega en OAuth2 → Redirects `https://TU-DOMINIO.up.railway.app/auth/callback`.
-5. Configura las variables del archivo `.env.example` en Railway (sin subir valores reales).
-6. Genera un dominio público y establece `APP_BASE_URL` a ese mismo origen HTTPS exacto, sin barra final.
-7. Despliega. Verifica `/health` y después el inicio de sesión.
-
-La aplicación requiere `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `SESSION_SECRET` (>=32 caracteres), `DASHBOARD_ADMIN_IDS` y `APP_BASE_URL` en HTTPS en producción. Si falta configuración se detiene de forma segura.
-
-## Desarrollo local
+Para crear la base de datos gratuita D1:
 
 ```bash
 cd dashboard
-cp .env.example .env # Las variables deben exportarse al entorno del proceso
-npm start
+npx wrangler d1 create pesadilla-pvp-dashboard
 ```
 
-Para localhost: `APP_BASE_URL=http://localhost:3000` y registra `http://localhost:3000/auth/callback` en OAuth2. Node no carga automáticamente el archivo .env: exporta las variables con tu shell o usa el panel de Railway.
+Pegar el `database_id` devuelto en `wrangler.jsonc` y descomentar `d1_databases`. Después aplicar:
 
-## Fase 2 (no incluida todavía)
+```bash
+npx wrangler d1 execute pesadilla-pvp-dashboard --remote --file=./schema.sql
+npm run deploy
+```
 
-- PostgreSQL con tablas `players`, `matches`, `match_participants`, `reports`, `sanctions` y `audit_logs`.
-- Ingesta de eventos Roblox desde scripts de servidor (nunca LocalScripts), autenticada con credenciales del servidor y validación de payload.
-- Operaciones de ban/unban vía Roblox Open Cloud **desde el backend**, con confirmaciones y auditoría.
-- Configuración de Discord mediante el bot existente y permisos por servidor; el dashboard no almacena su token.
-- Protección CSRF, rate limits persistentes y almacenamiento de sesiones escalable antes de habilitar acciones administrativas.
+**No compartas aquí claves, tokens ni secretos.** No mezcles la SQLite local del bot con D1. La futura sincronización requiere un protocolo para eventos fiables desde scripts de servidor Roblox, autorización individual para bans, límite de peticiones y registro de auditoría. El panel no controla actualmente Roblox ni modifica Discord; todavía hay que implementar esas funciones.
 
-Para no perder datos, **no apuntar dos instancias distintas a un archivo SQLite local**. La transición a PostgreSQL requiere un plan de migración del bot actual.
+## Prueba rápida
+
+```bash
+cd dashboard
+npm install
+npm run check
+```
+
+En la fase siguiente se conectarán ingesta de reportes/partidas y operaciones verificadas de moderación. Se recomienda desplegar primero el login y revisar permisos antes de añadir cualquier endpoint de escritura.
