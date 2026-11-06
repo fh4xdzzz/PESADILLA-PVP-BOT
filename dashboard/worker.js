@@ -27,7 +27,15 @@ const u=new URL(request.url), path=u.pathname, method=request.method;
 if(method!=='GET')return response('Método no permitido',405,{'Allow':'GET'});
 if(path==='/health')return Response.json({ok:true,service:'pesadilla-pvp-dashboard'});
 const origin=env.APP_BASE_URL;
-if(!origin || !/^https:\/\//.test(origin) || !env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET || !env.SESSION_SECRET || env.SESSION_SECRET.length<32 || !env.DASHBOARD_ADMIN_IDS) return response('Dashboard pendiente de configuración segura. Consulta README.',503);
+const missing=[];
+if(!origin) missing.push('APP_BASE_URL');
+else if(!/^https:\/\//.test(origin)) missing.push('APP_BASE_URL (debe comenzar por https://)');
+if(!env.DISCORD_CLIENT_ID) missing.push('DISCORD_CLIENT_ID');
+if(!env.DISCORD_CLIENT_SECRET) missing.push('DISCORD_CLIENT_SECRET');
+if(!env.DASHBOARD_ADMIN_IDS) missing.push('DASHBOARD_ADMIN_IDS');
+if(!env.SESSION_SECRET || env.SESSION_SECRET.length<32) missing.push('SESSION_SECRET (mínimo 32 caracteres)');
+if(missing.length) return response(layout('Configuración pendiente',
+  '<h1>Configuración pendiente</h1><p>Corrige estos nombres de variables en Cloudflare → Settings → Variables and Secrets:</p><div class="card"><ul>'+missing.map(x=>'<li><code>'+htmlEscape(x)+'</code></li>').join('')+'</ul></div><p>Los valores secretos no se muestran. Después de guardar, recarga el dashboard.</p>'),503);
 const redirectUri=`${origin.replace(/\/$/,'')}/auth/callback`;
 if(path==='/login') {const state=base64url(crypto.getRandomValues(new Uint8Array(24)));const url=new URL('https://discord.com/oauth2/authorize');url.search=new URLSearchParams({client_id:env.DISCORD_CLIENT_ID,redirect_uri:redirectUri,response_type:'code',scope:'identify',state}).toString();return redirect(url.toString(),secureCookie('oauth_state',state,600));}
 if(path==='/auth/callback') {
