@@ -41,6 +41,7 @@ const html=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'
 async function setup(env){
  await env.DB.batch([
   env.DB.prepare('CREATE TABLE IF NOT EXISTS discord_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_by TEXT NOT NULL,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)'),
+  env.DB.prepare("CREATE TABLE IF NOT EXISTS staff_roles(roblox_user_id TEXT PRIMARY KEY,discord_user_id TEXT,role TEXT NOT NULL CHECK(role IN ('owner','administrador','moderador','soporte')),granted_by TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
   env.DB.prepare("CREATE TABLE IF NOT EXISTS dashboard_moderation(id INTEGER PRIMARY KEY AUTOINCREMENT,roblox_user_id TEXT NOT NULL,action TEXT NOT NULL CHECK(action IN ('ban','unban','kick')),reason TEXT NOT NULL,actor_discord_id TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',requested_at_ms INTEGER NOT NULL,lease_until_ms INTEGER,attempts INTEGER NOT NULL DEFAULT 0,executed_server TEXT,result_message TEXT,updated_at_ms INTEGER NOT NULL)"),
   env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_moderation_queue ON dashboard_moderation(status,requested_at_ms)')
  ]);
