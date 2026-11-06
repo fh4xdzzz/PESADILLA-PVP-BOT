@@ -1,15 +1,16 @@
+import { icon } from './lucide-icons.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const format = n => Number(n||0).toLocaleString('es');
 const date = v => {const d=new Date(v);return Number.isNaN(d.getTime())?esc(v):new Intl.DateTimeFormat('es',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(d)+' UTC';};
 const initials = v => String(v||'?').slice(0,2).toUpperCase();
 const nav = [
- ['/', '◈', 'Vista general'],
- ['/jugadores','♟','Jugadores'],
- ['/partidas','▤','Partidas'],
- ['/reportes','⚑','Reportes'],
- ['/baneos','⛨','Sanciones'],
- ['/discord','◎','Discord']
+ ['/', 'layout-dashboard', 'Vista general'],
+ ['/jugadores','users','Jugadores'],
+ ['/partidas','swords','Partidas'],
+ ['/reportes','flag','Reportes'],
+ ['/baneos','shield-ban','Sanciones'],
+ ['/discord','messages-square','Discord']
 ];
 const style = `
 :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#f3edf5;background:#0a090d;font-synthesis:none}
@@ -18,10 +19,11 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:poi
 .shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
 .sidebar{border-right:1px solid #30252a;background:#100e13;display:flex;flex-direction:column;padding:26px 15px;position:sticky;top:0;height:100vh}
 .brand{padding:8px 13px 31px;display:flex;align-items:center;gap:13px}.brandmark{width:43px;height:43px;border-radius:13px;background:linear-gradient(140deg,#c5293b,#60142d);display:grid;place-items:center;font-size:24px;box-shadow:0 9px 25px #b01e3740}
+.brandmark .lucide{width:25px;height:25px}.logout .lucide{width:14px;height:14px;margin-right:4px}.btn .lucide{width:15px;height:15px;margin-right:5px}.metric-label .lucide{width:15px;height:15px;margin-right:7px;color:#df7285}.pill .lucide{width:13px;height:13px;margin-right:5px}
 .brand strong{font-size:14px;letter-spacing:.11em}.brand small{display:block;margin-top:5px;color:#c98693;font-size:10px;letter-spacing:.2em}
 .navhead{font-size:10px;color:#827079;letter-spacing:.17em;text-transform:uppercase;padding:10px 14px}.nav{display:flex;flex-direction:column;gap:5px}
 .nav a{display:flex;gap:13px;align-items:center;color:#a99da6;padding:13px 14px;border-radius:10px;font-size:13px;font-weight:600;border:1px solid transparent}
-.nav a .ico{font-size:19px;width:21px;text-align:center;color:#ad6b7a}.nav a:hover{background:#26191e;color:#fff}
+.nav a .ico{width:21px;display:inline-flex;align-items:center;justify-content:center;color:#ad6b7a;flex-shrink:0}.lucide{display:inline-block;vertical-align:middle;flex-shrink:0}.nav a:hover{background:#26191e;color:#fff}
 .nav a.active{color:#fff;background:linear-gradient(100deg,#4e1c2b,#2b1922);border-color:#7c3240}
 .nav a.active .ico{color:#ff8393}.sidebottom{margin-top:auto;border-top:1px solid #30252a;padding:18px 10px 3px;font-size:12px;color:#9f8d96}
 .live{display:inline-block;background:#70e9a6;width:7px;height:7px;border-radius:50%;box-shadow:0 0 8px #3ccc77;margin-right:6px}
@@ -54,12 +56,12 @@ td{padding:15px 11px;border-bottom:1px solid #2a2228;color:#d1bdc7}tr:last-child
 @media(max-width:430px){.cards{grid-template-columns:1fr 1fr}.metric-label{font-size:9px}.metric-value{font-size:27px}.account span{display:none}}
 `;
 export function renderShell(title, body, user=null) {
- const links=nav.map(([url,ico,label])=>'<a class="'+(title===label?'active':'')+'" href="'+url+'"><span class="ico">'+ico+'</span>'+label+'</a>').join('');
- return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><title>'+esc(title)+' · PESADILLA PVP</title><style>'+style+'</style></head><body><div class="shell"><aside class="sidebar"><div class="brand"><div class="brandmark">☠</div><div><strong>PESADILLA PVP</strong><small>ADMINISTRATION</small></div></div><div class="navhead">Administración</div><nav class="nav" aria-label="Navegación principal">'+links+'</nav><div class="sidebottom"><span class="live"></span>Panel seguro · Cloudflare</div></aside><div class="area"><header class="topbar"><div class="breadcrumb">PESADILLA PVP / <b>'+esc(title)+'</b></div>'+(user?'<div class="account"><div class="avatar">'+esc(initials(user.username))+'</div><span>'+esc(user.username)+'</span><a class="logout" href="/logout">Salir</a></div>':'<span class="pill">Acceso privado</span>')+'</header><main>'+body+'<footer class="footer">PESADILLA PVP · Datos reales desde Roblox · Solo administradores autorizados</footer></main></div></div></body></html>';
+ const links=nav.map(([url,ico,label])=>'<a class="'+(title===label?'active':'')+'" href="'+url+'"><span class="ico">'+icon(ico)+'</span>'+label+'</a>').join('');
+ return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><title>'+esc(title)+' · PESADILLA PVP</title><style>'+style+'</style></head><body><div class="shell"><aside class="sidebar"><div class="brand"><div class="brandmark">'+icon('skull')+'</div><div><strong>PESADILLA PVP</strong><small>ADMINISTRATION</small></div></div><div class="navhead">Administración</div><nav class="nav" aria-label="Navegación principal">'+links+'</nav><div class="sidebottom"><span class="live"></span>Panel seguro · Cloudflare</div></aside><div class="area"><header class="topbar"><div class="breadcrumb">PESADILLA PVP / <b>'+esc(title)+'</b></div>'+(user?'<div class="account"><div class="avatar">'+esc(initials(user.username))+'</div><span>'+esc(user.username)+'</span><a class="logout" href="/logout">'+icon('log-out')+' Salir</a></div>':'<span class="pill">Acceso privado</span>')+'</header><main>'+body+'<footer class="footer">PESADILLA PVP · Datos reales desde Roblox · Solo administradores autorizados</footer></main></div></div></body></html>';
 }
 async function all(env, sql, params=[]) {const st=env.DB.prepare(sql);return (await (params.length?st.bind(...params):st).all()).results||[];}
 async function one(env,sql,params=[]) {const st=env.DB.prepare(sql);return (await (params.length?st.bind(...params):st).first())||{};}
-const metric=(name,value,foot)=>'<div class="metric"><div class="metric-label">'+esc(name)+'</div><div class="metric-value">'+(value===null?'—':format(value))+'</div><div class="metric-foot">'+esc(foot)+'</div></div>';
+const metric=(name,value,foot,glyph='layout-dashboard')=>'<div class="metric"><div class="metric-label">'+icon(glyph)+esc(name)+'</div><div class="metric-value">'+(value===null?'—':format(value))+'</div><div class="metric-foot">'+esc(foot)+'</div></div>';
 function matchTable(rows) {
  return rows.length?'<div class="tablewrap"><table><thead><tr><th>Partida</th><th>Fecha UTC</th><th>Jugadores</th><th>Estado</th></tr></thead><tbody>'+rows.map(x=>'<tr><td><a class="link mono" href="/partidas/'+encodeURIComponent(x.match_id)+'">'+esc(x.match_id.slice(0,12))+'…</a></td><td>'+esc(date(x.started_at))+'</td><td>'+format(x.participants)+'</td><td><span class="pill green">Finalizada</span></td></tr>').join('')+'</tbody></table></div>':'<div class="empty"><strong>No hay partidas registradas</strong>Termina una partida real en Roblox para verla aquí.</div>';
 }
@@ -81,13 +83,13 @@ export async function renderDashboard(path,env,user,params=new URLSearchParams()
  let body='';
  if(path==='/') {
    const [m,players,matches]=await Promise.all([one(env,Q.metrics),all(env,Q.players),all(env,Q.matches)]);
-   body=head('Centro de control','Supervisa la actividad real de tu experiencia Roblox y la comunidad Discord.')+'<div class="pills"><span class="pill green">● Datos conectados a D1</span><span class="pill">Solo lectura</span></div><div class="cards">'+metric('Jugadores',m.players,'Registrados en Roblox')+metric('Partidas',m.matches,'Resultados recibidos')+metric('Reportes',m.reports,'Casos almacenados')+metric('Sanciones',m.sanctions,'Sanciones registradas')+'</div><div class="split">'+panel('Últimas partidas',matchTable(matches.slice(0,7)),'<a class="link" href="/partidas">Ver todas →</a>')+panel('Clasificación PvP',players.length?'<div class="tablewrap"><table><thead><tr><th>Jugador</th><th>Victorias</th><th>Kills</th></tr></thead><tbody>'+players.slice(0,7).map((p,i)=>'<tr><td class="primary"><span class="rank">#'+(i+1)+'</span> '+esc(p.username)+'</td><td>'+format(p.wins)+'</td><td>'+format(p.kills)+'</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Sin resultados aún.</div>','<a class="link" href="/jugadores">Ver ranking →</a>')+'</div>';
+   body=head('Centro de control','Supervisa la actividad real de tu experiencia Roblox y la comunidad Discord.')+'<div class="pills"><span class="pill green">'+icon('database')+' Datos conectados a D1</span><span class="pill">Solo lectura</span></div><div class="cards">'+metric('Jugadores',m.players,'Registrados en Roblox','users')+metric('Partidas',m.matches,'Resultados recibidos','swords')+metric('Reportes',m.reports,'Casos almacenados','flag')+metric('Sanciones',m.sanctions,'Sanciones registradas','shield-ban')+'</div><div class="split">'+panel('Últimas partidas',matchTable(matches.slice(0,7)),'<a class="link" href="/partidas">'+icon('arrow-up-right')+' Ver todas</a>')+panel('Clasificación PvP',players.length?'<div class="tablewrap"><table><thead><tr><th>Jugador</th><th>Victorias</th><th>Kills</th></tr></thead><tbody>'+players.slice(0,7).map((p,i)=>'<tr><td class="primary"><span class="rank">#'+(i+1)+'</span> '+esc(p.username)+'</td><td>'+format(p.wins)+'</td><td>'+format(p.kills)+'</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Sin resultados aún.</div>','<a class="link" href="/jugadores">'+icon('arrow-up-right')+' Ver ranking</a>')+'</div>';
  } else if(path==='/jugadores'){
    const players=await all(env,Q.players),q=safeSearch(params.get('q')),shown=q?players.filter(x=>String(x.username||'').toLowerCase().includes(q.toLowerCase())||String(x.roblox_user_id).includes(q)):players;
-   body=head('Jugadores','Estadísticas acumuladas por jugador, basadas en partidas recibidas.')+'<form class="search" action="/jugadores" method="get"><input name="q" maxlength="80" aria-label="Buscar jugador" placeholder="Buscar por nombre o ID de Roblox" value="'+esc(q)+'"><button class="btn" type="submit">Buscar</button></form>'+panel('Jugadores · '+shown.length,playersTable(shown));
+   body=head('Jugadores','Estadísticas acumuladas por jugador, basadas en partidas recibidas.')+'<form class="search" action="/jugadores" method="get"><input name="q" maxlength="80" aria-label="Buscar jugador" placeholder="Buscar por nombre o ID de Roblox" value="'+esc(q)+'"><button class="btn" type="submit">'+icon('search')+' Buscar</button></form>'+panel('Jugadores · '+shown.length,playersTable(shown));
  } else if(path==='/partidas'){
    const matches=await all(env,Q.matches),q=safeSearch(params.get('q')),shown=q?matches.filter(x=>x.match_id.toLowerCase().includes(q.toLowerCase())):matches;
-   body=head('Historial de partidas','Resultados guardados en Cloudflare D1, recibidos directamente del servidor.')+'<form class="search" action="/partidas" method="get"><input name="q" maxlength="80" aria-label="Buscar partida" placeholder="Buscar por ID de partida" value="'+esc(q)+'"><button class="btn" type="submit">Buscar</button></form>'+panel('Partidas · '+shown.length,matchTable(shown));
+   body=head('Historial de partidas','Resultados guardados en Cloudflare D1, recibidos directamente del servidor.')+'<form class="search" action="/partidas" method="get"><input name="q" maxlength="80" aria-label="Buscar partida" placeholder="Buscar por ID de partida" value="'+esc(q)+'"><button class="btn" type="submit">'+icon('search')+' Buscar</button></form>'+panel('Partidas · '+shown.length,matchTable(shown));
  } else if(path.startsWith('/partidas/')){
    const id=decodeURIComponent(path.slice('/partidas/'.length));
    if(!/^[a-zA-Z0-9:_-]{1,100}$/.test(id))return renderShell('Error',head('Partida inválida','El identificador no tiene el formato esperado.'),user);
