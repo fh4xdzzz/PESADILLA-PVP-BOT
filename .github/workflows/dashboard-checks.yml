@@ -22,11 +22,10 @@ jobs:
           node --check dashboard/pro-ui.js
           node --check dashboard/worker.js
           node --check dashboard/replay-api.js
-          node --check dashboard/replay-client.js
-          node --check dashboard/replay-view.js
           node --check dashboard/replay-theater.js
           node --check dashboard/staff-roles.js
           node --check dashboard/control-center.js
+          node --check dashboard/live-matches.js
           node --check src/services/dashboardSync.js
           node --check src/index.js
           node --check dashboard/reports.js
