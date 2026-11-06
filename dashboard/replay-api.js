@@ -112,7 +112,7 @@ export async function ingestReplayEvents(request,env){
  for(const e of x.events){
   // [time, kind, actorId, targetId|null, x, y, z, shortDetail]
   if(!Array.isArray(e)||e.length!==8||!finite(e[0])||e[0]<0||e[0]>900||
-   !types.has(e[1])||!validUid(e[2])||(e[3]!==null&&!validUid(e[3]))||
+   !types.has(e[1])||!validUid(e[2])||(e[3]!==null&&e[3]!==''&&!validUid(e[3]))||
    !e.slice(4,7).every(finite)||typeof e[7]!=='string'||e[7].length>80)
    return reply({error:'invalid_event'},400);
  }
