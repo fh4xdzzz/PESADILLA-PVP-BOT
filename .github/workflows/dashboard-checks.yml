@@ -25,6 +25,12 @@ jobs:
           node --check dashboard/replay-theater.js
           node --check dashboard/staff-roles.js
           node --check dashboard/control-center.js
+          node --check dashboard/discord-guild-directory.js
+          node --check dashboard/discord-ui.js
+          node --check dashboard/discord-style.js
+          node --check src/services/guildDirectorySync.js
+          node --check src/services/dashboardSync.js
+          node --check src/services/settings.js
           node --check dashboard/live-matches.js
           node --check src/services/dashboardSync.js
           node --check src/index.js
