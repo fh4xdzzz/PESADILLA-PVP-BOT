@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {renderLoginPage,dashboardIntro} from '../portal-ui.js';
+import worker from '../worker.js';
 
 test('login screen links to Discord OAuth route',()=>{
  const html=renderLoginPage();
@@ -19,4 +20,11 @@ test('welcome banner renders current synchronization state',()=>{
 test('admin name is treated as text',()=>{
  const html=dashboardIntro({username:'A & B'},0);
  assert.match(html,/A &amp; B/);
+});
+
+test('dashboard serves the login page when no session is present',async()=>{
+ const env={APP_BASE_URL:'https://example.com',DISCORD_CLIENT_ID:'1234',DISCORD_CLIENT_SECRET:'placeholder',DASHBOARD_ADMIN_IDS:'9876',SESSION_SECRET:'a'.repeat(40)};
+ const res=await worker.fetch(new Request('https://example.com/'),env);
+ assert.equal(res.status,200);
+ assert.match(await res.text(),/Continuar con Discord/);
 });
