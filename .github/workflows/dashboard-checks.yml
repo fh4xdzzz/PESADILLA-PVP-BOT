@@ -21,5 +21,8 @@ jobs:
           node --check dashboard/lucide-icons.js
           node --check dashboard/pro-ui.js
           node --check dashboard/worker.js
+          node --check dashboard/reports.js
+      - name: Report system tests
+        run: node --test dashboard/tests/reports.test.js
       - name: Check D1 configuration
         run: node -e "const fs=require('fs'); const json=JSON.parse(fs.readFileSync('dashboard/wrangler.jsonc','utf8')); if (!json.d1_databases?.some(x=>x.binding==='DB')) process.exit(1)"
