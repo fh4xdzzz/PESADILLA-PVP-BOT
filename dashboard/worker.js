@@ -1,3 +1,4 @@
+import {receiveGuildDirectory} from './discord-guild-directory.js';
 import { liveMatchAPI } from './live-matches.js';
 import { controlPage,controlWrite,controlService } from './control-center.js';
 import { handleStaffAdmin } from './staff-roles.js';
@@ -84,6 +85,7 @@ if(path==='/api/ingest/replay/events' && method==='POST')return ingestReplayEven
 if(path==='/api/ingest/replay/events' && method==='GET')return readReplayEventsForRoblox(request,env,u);
 if(path==='/api/ingest/replay/claim' && method==='GET')return claimTheater(request,env,u);
 if(path.startsWith('/api/ingest/admin/'))return handleStaffAdmin(request,env,u);
+if(path==='/api/sync/discord/guilds' && method==='POST')return receiveGuildDirectory(request,env);
 if(path==='/api/sync/discord'||path.startsWith('/api/ingest/moderation/'))return controlService(request,env,u);
 if(path.startsWith('/api/ingest/live/'))return liveMatchAPI(request,env,u);
 if(method!=='GET' && !(method==='POST' && (path==='/discord'||path==='/moderacion')))return response('Método no permitido',405,{'Allow':'GET, POST'});

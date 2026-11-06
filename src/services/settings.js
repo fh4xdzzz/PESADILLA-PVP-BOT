@@ -2,9 +2,15 @@ const { prisma } = require('../db.js');
 const { audit } = require('../core/audit.js');
 const { log } = require('../logger.js');
 
-async function getSetting(key) {
-  const row = await prisma.botSetting.findUnique({ where: { key } });
-  return row?.value ?? null;
+async function getSetting(key,guildId=null) {
+  // Prefer a per-guild override; old commands without guild context still
+  // read the main community settings through backward-compatible keys.
+  if(guildId && /^\d+$/.test(String(guildId))) {
+    const scoped=await prisma.botSetting.findUnique({where:{key:'guild.'+guildId+'.'+key}});
+    if(scoped)return scoped.value;
+  }
+  const row=await prisma.botSetting.findUnique({where:{key}});
+  return row?.value??null;
 }
 
 async function setSetting(key, value, actorId) {
@@ -47,13 +53,13 @@ const CHANNEL_KEYS = {
   comandosBot: 'channel.comandos-bot',
 };
 
-async function getChannelId(key) {
-  return getSetting(key);
+async function getChannelId(key,guildId) {
+  return getSetting(key,guildId);
 }
 
-async function postToChannel(client, channelKey, payload) {
+async function postToChannel(client, channelKey, payload, guildId=null) {
   try {
-    const channelId = await getSetting(channelKey);
+    const channelId = await getSetting(channelKey,guildId);
     if (!channelId) {
       log.debug({ channelKey }, 'Canal no configurado, se omite publicación');
       return false;
