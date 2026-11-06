@@ -128,3 +128,18 @@ CREATE TABLE IF NOT EXISTS dashboard_moderation (
  updated_at_ms INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_moderation_queue ON dashboard_moderation(status,requested_at_ms);
+
+-- PESADILLA global server-side anti-cheat telemetry, available across Roblox servers.
+CREATE TABLE IF NOT EXISTS anticheat_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  server_job_id TEXT NOT NULL,
+  roblox_user_id TEXT NOT NULL,
+  username TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  detail TEXT NOT NULL DEFAULT '',
+  strikes INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_anticheat_user_id ON anticheat_log(roblox_user_id,id DESC);
+CREATE INDEX IF NOT EXISTS idx_anticheat_created ON anticheat_log(id DESC);

@@ -25,6 +25,9 @@ jobs:
           node --check dashboard/replay-theater.js
           node --check dashboard/staff-roles.js
           node --check dashboard/control-center.js
+          node --check dashboard/anticheat.js
+          node --check dashboard/anticheat-ui.js
+          node --check dashboard/admin-player.js
           node --check dashboard/discord-guild-directory.js
           node --check dashboard/discord-ui.js
           node --check dashboard/discord-style.js
