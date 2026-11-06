@@ -7,7 +7,7 @@ const LEVEL_RANK = {
   EVENT_MANAGER: 10,
 };
 
-const config = require('./config.js').config;
+const config = require('../config.js').config;
 
 function getStaffLevel(userId) {
   if (config.staff.OWNER.includes(userId)) return 'OWNER';
