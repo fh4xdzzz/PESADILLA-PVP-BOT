@@ -48,7 +48,8 @@ local function row(parent,text,button,action)
 end
 local busy=false
 local function query(action,...)
- local ok,r=pcall(function()return rpc:InvokeServer(action,...)end)
+ local args=table.pack(...)
+ local ok,r=pcall(function()return rpc:InvokeServer(action,table.unpack(args,1,args.n))end)
  if not ok then return {ok=false,error="server_unavailable"} end
  return r or {ok=false,error="empty_response"}
 end
