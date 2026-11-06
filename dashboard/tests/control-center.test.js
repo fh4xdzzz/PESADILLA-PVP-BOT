@@ -4,7 +4,7 @@ import {csrfForSession,controlWrite,controlService,controlPage} from '../control
 
 const SESSION='sample-cookie',APP='https://pesadilla.example',secret='x'.repeat(40),user={id:'796931424112476171',username:'Owner'};
 function fixture(){
- const settings=new Map(),moderations=[],audit=[];
+ const settings=new Map(),moderations=[],audit=[],guilds=new Map();
  const DB={
   prepare(sql){
    let params=[];
@@ -12,6 +12,8 @@ function fixture(){
     bind(...values){params=values;return st;},
     async run(){
      if(sql.startsWith('INSERT INTO discord_settings'))settings.set(params[0],{key:params[0],value:params[1],updated_at:'2026-11-06'});
+     if(sql.startsWith("UPDATE discord_guild_directory SET kind='other'"))for(const g of guilds.values())if(g.kind===params[0]&&g.guild_id!==params[1])g.kind='other';
+     if(sql.startsWith('UPDATE discord_guild_directory SET kind=?'))guilds.get(params[1]).kind=params[0];
      if(sql.startsWith('INSERT INTO dashboard_moderation'))moderations.push({id:moderations.length+1,roblox_user_id:params[0],action:params[1],reason:params[2],actor_discord_id:params[3],status:params[4],requested_at_ms:params[5],lease_until_ms:null,attempts:0});
      if(sql.startsWith('INSERT INTO audit_logs'))audit.push(params);
      return {success:true};
@@ -37,6 +39,8 @@ function fixture(){
     async all(){
      if(sql.startsWith('SELECT key,value FROM discord_settings'))return {results:[...settings.values()]};
      if(sql.startsWith('SELECT key,value,updated_at FROM discord_settings'))return {results:[...settings.values()]};
+     if(sql.startsWith('SELECT key,value FROM discord_settings WHERE key LIKE'))return {results:[...settings.values()].filter(x=>x.key.startsWith(params[0].slice(0,-1)))};
+     if(sql.startsWith('SELECT guild_id,name,kind,channels_json,roles_json,member_count,updated_at_ms FROM discord_guild_directory'))return {results:[...guilds.values()]};
      if(sql.startsWith("SELECT id,roblox_user_id,reason,action FROM dashboard_moderation WHERE action='kick'"))return {results:moderations.filter(m=>m.action==='kick'&&m.status==='pending'&&m.requested_at_ms>=params[0])};
      if(sql.startsWith('SELECT id,roblox_user_id,action,reason,actor_discord_id,status'))return {results:moderations};
      return {results:[]};
@@ -45,7 +49,7 @@ function fixture(){
   },
   async batch(statements){for(const statement of statements)await statement.run();}
  };
- return {env:{DB,APP_BASE_URL:APP,SESSION_SECRET:secret,ROBLOX_INGEST_SECRET:secret,BOT_CONFIG_SYNC_SECRET:'b'.repeat(40)},settings,moderations,audit};
+ return {env:{DB,APP_BASE_URL:APP,SESSION_SECRET:secret,ROBLOX_INGEST_SECRET:secret,BOT_CONFIG_SYNC_SECRET:'b'.repeat(40)},settings,moderations,audit,guilds};
 }
 async function submit(env,path,form,options={}){
  const csrf=await csrfForSession(SESSION,secret);
@@ -94,16 +98,20 @@ test('bot sync is private and returns configured channels',async()=>{
  const result=await (await controlService(good,env,new URL(good.url))).json();
  assert.equal(result.settings['channel.rules'],'1234567890');
 });
-test('Discord settings page is rendered and only owner can update configuration',async()=>{
- const {env}=fixture();
- const page=await controlPage('/discord',env,user,SESSION);
- assert.match(page,/Configuración de Discord/);
- const nonOwner={id:'444',username:'Other'};
- const input={'guild.main':'123456','guild.support':'654321'};
- for(const [k] of Object.entries((await import('../control-center.js')).CHANNELS))input[k]='';
- for(const [k] of Object.entries((await import('../control-center.js')).OPTIONS))if(!Object.hasOwn(input,k))input[k]=k.includes('.enabled')||k.startsWith('feature.')?'false':'';
- const denied=await submit(env,'/discord',input,{user:nonOwner});
+test('community selector renders real channels, saves only in selected guild and enforces owner',async()=>{
+ const {env,settings,guilds}=fixture();
+ guilds.set('111',{guild_id:'111',name:'PESADILLA Comunidad',kind:'main',channels_json:JSON.stringify([{id:'222',name:'anuncios',type:0,parentId:null}]),roles_json:JSON.stringify([{id:'333',name:'Moderador',position:1}]),member_count:100,updated_at_ms:Date.now()});
+ guilds.set('444',{guild_id:'444',name:'PESADILLA Soporte',kind:'support',channels_json:JSON.stringify([{id:'555',name:'tickets',type:0,parentId:null}]),roles_json:JSON.stringify([]),member_count:20,updated_at_ms:Date.now()});
+ const page=await controlPage('/discord',env,user,SESSION,new URLSearchParams('guild=111'));
+ assert.match(page,/PESADILLA Comunidad/);assert.match(page,/PESADILLA Soporte/);
+ assert.match(page,/anuncios/);assert.match(page,/Moderador/);
+ const post={guildId:'111',guildKind:'main','channel.announcements':'222','role.moderator':'333'};
+ const denied=await submit(env,'/discord',post,{user:{id:'4444',username:'Other'}});
  assert.equal(denied.status,403);
- const saved=await submit(env,'/discord',input);
+ assert.equal((await submit(env,'/discord',{...post,'channel.rules':'555'})).status,400);
+ const saved=await submit(env,'/discord',post);
  assert.equal(saved.status,303);
+ assert.equal(settings.get('guild.111.channel.announcements').value,'222');
+ assert.equal(settings.get('guild.111.role.moderator').value,'333');
+ assert.equal(settings.has('guild.444.channel.announcements'),false);
 });
