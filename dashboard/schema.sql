@@ -66,3 +66,15 @@ CREATE TABLE IF NOT EXISTS replay_chunks (
   PRIMARY KEY(match_id, chunk_index)
 );
 CREATE INDEX IF NOT EXISTS idx_replay_created ON replay_meta(created_at);
+
+-- Replay V2: event streams (shots, impacts, eliminations, round transitions)
+CREATE TABLE IF NOT EXISTS replay_event_meta (
+  match_id TEXT PRIMARY KEY,
+  total_chunks INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS replay_event_chunks (
+  match_id TEXT NOT NULL,
+  chunk_index INTEGER NOT NULL,
+  events_json TEXT NOT NULL,
+  PRIMARY KEY(match_id, chunk_index)
+);
