@@ -4,13 +4,14 @@ const { connectDb, disconnectDb } = require('./db.js');
 const { handleInteraction } = require('./commands/interactionHandler.js');
 const { config, validateConfig } = require('./config.js');
 const { log } = require('./logger.js');
-const { startDashboardSync } = require('./services/dashboardSync.js');
+const { startDashboardSync, syncDashboardSettings } = require('./services/dashboardSync.js');
 const { getSetting } = require('./services/settings.js');
 
 async function main() {
   log.info('Iniciando PESADILLA PVP BOT v2 (JavaScript)...');
   validateConfig();
   await connectDb();
+  await syncDashboardSettings();
   startDashboardSync();
 
   const client = createClient();
