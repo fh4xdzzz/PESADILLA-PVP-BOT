@@ -14,6 +14,36 @@ return `<!doctype html><html lang="es"><head><meta charset="UTF-8"><meta name="v
 :root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,sans-serif;background:#090912;color:#f1ecff}*{box-sizing:border-box}body{margin:0}a{color:#c4a6ff;text-decoration:none}header{display:flex;justify-content:space-between;align-items:center;padding:18px 6%;border-bottom:1px solid #292239;background:#10101d}.brand{font-weight:900;letter-spacing:.09em;color:#f4eaff}.pill{padding:10px 15px;border:1px solid #544070;border-radius:30px}.wrap{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 65px)}aside{padding:22px 12px;background:#10101b;border-right:1px solid #292239;display:flex;flex-direction:column;gap:5px}aside a{border-radius:9px;padding:14px;color:#bdb3cf}aside a:hover,aside a.selected{background:#29213d;color:white}main{padding:35px;max-width:1320px;width:100%;margin:auto}h1{margin:0 0 8px;font-size:clamp(27px,4vw,38px)}h2{font-size:18px}p,.muted{color:#afa8c0;line-height:1.55}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin:26px 0}.card{background:#161526;border:1px solid #362847;padding:24px;border-radius:16px;box-shadow:0 7px 30px #05050b40}.metric{font-size:32px;font-weight:800;color:#e2caff}.tag{font-size:12px;color:#ad8de5;text-transform:uppercase;letter-spacing:.1em}.notice{border-left:3px solid #a16dff;padding:14px 18px;background:#20182f;border-radius:5px}.button{display:inline-block;background:#7d43d5;color:white;padding:12px 20px;border-radius:10px;font-weight:700}footer{margin-top:45px;color:#827b94;font-size:12px}@media(max-width:760px){.wrap{display:block}aside{flex-direction:row;overflow:auto;padding:8px}aside a{white-space:nowrap;padding:10px}main{padding:22px 15px}header{padding:14px}}
 </style></head><body><header><div class="brand">☠ PESADILLA PVP <span class="muted">/ CONTROL</span></div>${user?`<div><span class="muted">${htmlEscape(user.username)}</span> &nbsp; <a href="/logout">Salir</a></div>`:'<span class="muted">Acceso privado</span>'}</header><div class="wrap"><aside>${nav}</aside><main>${body}<footer>PESADILLA PVP · Dashboard en desarrollo · Sin datos inventados</footer></main></div></body></html>`;
 }
+async function handleMatchIngest(request,env) {
+  if (!env.DB || !env.ROBLOX_INGEST_SECRET || env.ROBLOX_INGEST_SECRET.length < 32) return Response.json({error:'not_configured'},{status:503});
+  const auth = request.headers.get('Authorization') || '';
+  if (auth !== 'Bearer ' + env.ROBLOX_INGEST_SECRET) return Response.json({error:'unauthorized'},{status:401});
+  if (!(request.headers.get('Content-Type') || '').startsWith('application/json')) return Response.json({error:'json_required'},{status:415});
+  const raw=await request.text();
+  if (raw.length>16000) return Response.json({error:'too_large'},{status:413});
+  let x;
+  try { x=JSON.parse(raw); } catch { return Response.json({error:'invalid_json'},{status:400}); }
+  const id = s => typeof s==='string' && /^[a-zA-Z0-9:_-]{1,100}$/.test(s);
+  const num = n => Number.isSafeInteger(n) && n>=0 && n<=100000;
+  if (!x || !id(x.matchId) || !id(x.serverJobId) || !Array.isArray(x.players) || x.players.length<1 || x.players.length>30 || !Number.isFinite(Date.parse(x.startedAt)) || !Number.isFinite(Date.parse(x.endedAt)) || Date.parse(x.endedAt)<Date.parse(x.startedAt)) return Response.json({error:'invalid_match'},{status:400});
+  const users=new Set(),participants=[];
+  for (const p of x.players) {
+    const uid=String(p?.userId??'');
+    if (!/^[1-9][0-9]{0,19}$/.test(uid) || users.has(uid) || typeof p.username!=='string' || !p.username.length || p.username.length>40 || !num(p.kills) || !num(p.deaths) || !num(p.wins) || p.wins>1) return Response.json({error:'invalid_player'},{status:400});
+    users.add(uid); participants.push({...p,userId:uid});
+  }
+  try {
+    const old=await env.DB.prepare('SELECT match_id FROM matches WHERE match_id=?').bind(x.matchId).first();
+    if (old) return Response.json({ok:true,duplicate:true});
+    const statements=[];
+    for (const p of participants) statements.push(env.DB.prepare('INSERT INTO players(roblox_user_id,username) VALUES(?,?) ON CONFLICT(roblox_user_id) DO UPDATE SET username=excluded.username,updated_at=CURRENT_TIMESTAMP').bind(p.userId,p.username));
+    statements.push(env.DB.prepare("INSERT INTO matches(match_id,server_job_id,started_at,ended_at,status) VALUES(?,?,?,?,'completed')").bind(x.matchId,x.serverJobId,x.startedAt,x.endedAt));
+    for (const p of participants) statements.push(env.DB.prepare('INSERT INTO match_participants(match_id,roblox_user_id,kills,deaths,wins) VALUES(?,?,?,?,?)').bind(x.matchId,p.userId,p.kills,p.deaths,p.wins));
+    await env.DB.batch(statements);
+    return Response.json({ok:true,matchId:x.matchId},{status:201});
+  } catch (e) { console.error('match ingest database error'); return Response.json({error:'database_error'},{status:500}); }
+}
+
 const titles={'/':'Inicio','/jugadores':'Jugadores','/partidas':'Partidas','/reportes':'Reportes','/baneos':'Baneos','/discord':'Discord'};
 async function stats(env) {if(!env.DB) return null;try {const names=['players','matches','reports','sanctions'];const results=await Promise.all(names.map(n=>env.DB.prepare(`SELECT COUNT(*) AS total FROM ${n}`).first()));return Object.fromEntries(names.map((n,i)=>[n,results[i]?.total??0]));}catch{return null;}}
 async function page(path,env,user) {const title=titles[path];const labels={players:'Jugadores',matches:'Partidas',reports:'Reportes',sanctions:'Sanciones'};const data=await stats(env);const metrics=Object.entries(labels).map(([k,v])=>`<div class="card"><div class="tag">${v}</div><div class="metric">${data?.[k]??'—'}</div><div class="muted">${data?'Registros guardados':'Sin base de datos conectada'}</div></div>`).join('');
