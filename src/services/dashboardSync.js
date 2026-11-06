@@ -2,6 +2,7 @@
 // Only the bot server holds BOT_CONFIG_SYNC_SECRET; Discord users cannot query this endpoint.
 const {setSetting,getSetting} = require('./settings.js');
 const {log} = require('../logger.js');
+const {config} = require('../config.js');
 
 const endpoint=process.env.DASHBOARD_BASE_URL;
 const token=process.env.BOT_CONFIG_SYNC_SECRET;
@@ -28,6 +29,8 @@ async function syncDashboardSettings(){
    if(!prefix.test(key)||typeof value!=='string')continue;
    if((await getSetting(key))!==value)await setSetting(key,value,'dashboard-sync');
   }
+  if(settings['guild.main'])config.discord.mainGuildId=settings['guild.main'];
+  if(settings['guild.support'])config.discord.supportGuildId=settings['guild.support'];
   lastHash=hash;
   log.info({count:source.length},'Configuración Discord sincronizada desde dashboard');
   return true;
