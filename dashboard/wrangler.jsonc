@@ -5,9 +5,13 @@
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
   "keep_vars": true,
-  // Crear la base de datos con: npx wrangler d1 create pesadilla-pvp-dashboard
-  // Después agregar el binding D1:
-  // "d1_databases": [{ "binding":"DB", "database_name":"pesadilla-pvp-dashboard", "database_id":"TU_DATABASE_ID" }]
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "Panel de control de Pesadilla-PvP",
+      "database_id": "31bdba76-e258-453a-b198-b99cb56c4944"
+    }
+  ]
   "vars": {
     "APP_NAME": "PESADILLA PVP"
   }
