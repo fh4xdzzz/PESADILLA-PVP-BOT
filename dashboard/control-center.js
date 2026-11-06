@@ -1,3 +1,4 @@
+import {anticheatPage} from './anticheat-ui.js';
 import {dashboardStyle} from './discord-style.js';
 import {renderGuildSettings,saveGuildSettings} from './discord-ui.js';
 import {loadGuilds} from './discord-guild-directory.js';
@@ -73,9 +74,9 @@ function timingSafe(a,b){
  let bad=0;for(let i=0;i<a.length;i++)bad|=a.charCodeAt(i)^b.charCodeAt(i);return bad===0;
 }
 function renderPage(page,user,body,flash=''){
- const nav=[['/','layout-dashboard','Vista general'],['/discord','messages-square','Comunidades Discord'],['/moderacion','shield-ban','Moderación Roblox']];
+ const nav=[['/','layout-dashboard','Vista general'],['/discord','messages-square','Comunidades Discord'],['/moderacion','shield-ban','Moderación Roblox'],['/anticheat','shield-ban','Anticheat']];
  const menu=nav.map(([url,glyph,name])=>'<a class="'+(page===url?'selected':'')+'" href="'+url+'">'+icon(glyph)+' '+html(name)+'</a>').join('');
- const title=page==='/discord'?'Comunidades':page==='/moderacion'?'Moderación':'Vista general';
+ const title=page==='/discord'?'Comunidades':page==='/moderacion'?'Moderación':page==='/anticheat'?'Anticheat':'Vista general';
  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>'+html(title)+' · PESADILLA PVP</title><style>'+dashboardStyle+'</style></head><body><div class="shell"><aside class="side"><div class="brand"><div class="brand-icon">'+icon('skull')+'</div><div>PESADILLA PVP<small>BOT CONTROL CENTER</small></div></div><div class="nav-caption">ADMINISTRACIÓN</div><nav class="nav">'+menu+'</nav><div class="side-foot"><b>●</b> Panel protegido · Cloudflare</div></aside><div class="main-wrap"><header class="topbar"><div class="breadcrumb">PESADILLA PVP / <strong>'+html(title)+'</strong></div><div class="account"><span class="avatar">'+html((user.username||'?')[0].toUpperCase())+'</span><span>'+html(user.username)+'</span><a class="logout" href="/logout">Salir</a></div></header><main>'+(flash?'<div class="notice success">'+html(flash)+'</div>':'')+body+'<footer>PESADILLA PVP · Configuración sincronizada de forma segura · Solo administradores autorizados</footer></main></div></div></body></html>';
 }
 export async function controlPage(page,env,user,session,query=new URLSearchParams()){
@@ -97,6 +98,7 @@ export async function controlPage(page,env,user,session,query=new URLSearchParam
    const body=await renderGuildSettings(env,csrf,query,ownerAllowed(env,user));
    return renderPage(page,user,body);
   }
+  if(page==='/anticheat')return renderPage(page,user,await anticheatPage(env,query));
   if(page==='/moderacion'){
    const rows=(await env.DB.prepare('SELECT id,roblox_user_id,action,reason,actor_discord_id,status,requested_at_ms,result_message FROM dashboard_moderation ORDER BY id DESC LIMIT 50').all()).results||[];
    const form='<form method="post" action="/moderacion" class="grid"><input type="hidden" name="csrf" value="'+csrf+'"><label class="field">Roblox UserId<input name="robloxUserId" pattern="[1-9][0-9]{0,19}" required placeholder="ID del jugador"></label><label class="field">Acción<select name="action"><option value="ban">Banear globalmente</option><option value="unban">Desbanear globalmente</option><option value="kick">Expulsar del servidor</option></select></label><label class="field">Motivo<input name="reason" required minlength="5" maxlength="200" placeholder="Motivo de moderación"></label><div><p>El servidor Roblox ejecutará y confirmará la acción. Nunca se marcará aplicada al enviarla.</p><button type="submit">Enviar acción</button></div></form>';
