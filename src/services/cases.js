@@ -1,9 +1,19 @@
 const { prisma } = require('../db.js');
 const { log } = require('../logger.js');
 
+async function nextCaseNumber() {
+  const last = await prisma.case.findFirst({
+    orderBy: { caseNumber: 'desc' },
+    select: { caseNumber: true },
+  });
+  return (last?.caseNumber ?? 0) + 1;
+}
+
 async function createCase(input) {
+  const caseNumber = await nextCaseNumber();
   return prisma.case.create({
     data: {
+      caseNumber,
       type: input.type,
       subjectId: input.subjectId,
       subjectName: input.subjectName ?? null,
