@@ -1,3 +1,7 @@
+import {dashboardStyle} from './discord-style.js';
+import {renderGuildSettings,saveGuildSettings} from './discord-ui.js';
+import {loadGuilds} from './discord-guild-directory.js';
+import {icon} from './lucide-icons.js';
 // Discord control center + Roblox moderation command queue for PESADILLA PVP.
 // Browser actions require a verified OAuth admin session (enforced by worker.js);
 // bot/Roblox server endpoints require distinct server-side Bearer secrets.
@@ -69,10 +73,10 @@ function timingSafe(a,b){
  let bad=0;for(let i=0;i<a.length;i++)bad|=a.charCodeAt(i)^b.charCodeAt(i);return bad===0;
 }
 function renderPage(page,user,body,flash=''){
- const tabs=[['/','layout-dashboard','Vista general'],['/discord','settings','Configuración Discord'],['/moderacion','shield','Moderación Roblox']];
- const menu=tabs.map(([url,,name])=>'<a class="'+(page===url?'selected':'')+'" href="'+url+'">'+name+'</a>').join('');
- const style=':root{font-family:Inter,system-ui,sans-serif;color:#f8ebf2;background:#09080d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% 0,#54162a45,transparent 65%),#09080d}a{color:#f58da3;text-decoration:none}.shell{display:flex;min-height:100vh}.side{width:245px;background:#151016;border-right:1px solid #443039;padding:26px 17px}.brand{font-weight:900;letter-spacing:.08em;color:#fff;margin:5px 4px 34px}.brand small{display:block;color:#e06b82;font-size:10px;margin-top:6px}.nav{display:grid;gap:8px}.nav a{color:#bbaab3;padding:14px;border-radius:10px;font-size:13px}.nav .selected,.nav a:hover{color:white;background:#4f2031}main{padding:38px clamp(20px,4vw,64px);max-width:1400px;flex:1;min-width:0}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #493039;padding-bottom:22px}.top span{color:#c6aab8;font-size:12px}h1{font-size:32px;letter-spacing:-.04em}h2{font-size:19px}p{line-height:1.65;color:#c0aeba;font-size:13px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:15px}.card{padding:23px;border:1px solid #493039;border-radius:13px;background:#1d151d;margin:18px 0}.card strong{font-size:19px}.small{font-size:11px;color:#b29ba6}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));gap:14px}.field{display:grid;gap:6px;font-size:12px;color:#c7aebc}input,select,textarea{background:#100f15;border:1px solid #654153;border-radius:8px;color:white;padding:11px;width:100%;font:inherit}button{background:#ba3454;color:white;padding:12px 17px;border:0;border-radius:8px;cursor:pointer;font-weight:750}button:hover{background:#d74b6c}button:disabled{opacity:.5}table{border-collapse:collapse;width:100%;font-size:12px}th,td{text-align:left;padding:12px;border-bottom:1px solid #3a2a32}th{color:#f2a9b9}.info{border-left:3px solid #e8547a;background:#321e29;padding:14px;border-radius:7px;margin:12px 0}code{font-size:11px;overflow-wrap:anywhere}footer{font-size:11px;color:#9e8b96;margin-top:35px}@media(max-width:760px){.shell{display:block}.side{width:auto}.nav{display:flex;flex-wrap:wrap}main{padding:20px}}';
- return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PESADILLA PVP · Configuración Discord</title><style>'+style+'</style></head><body><div class="shell"><aside class="side"><div class="brand">☠ PESADILLA PVP<small>DISCORD CONTROL CENTER</small></div><nav class="nav">'+menu+'</nav></aside><main><div class="top"><span>Configuración segura · Discord OAuth</span><span>'+html(user.username)+' · <a href="/logout">Salir</a></span></div>'+ (flash?'<div class="info">'+html(flash)+'</div>':'')+body+'<footer>Acceso restringido · Los cambios quedan auditados · Roblox se administra desde el panel del juego</footer></main></div></body></html>';
+ const nav=[['/','layout-dashboard','Vista general'],['/discord','messages-square','Comunidades Discord'],['/moderacion','shield-ban','Moderación Roblox']];
+ const menu=nav.map(([url,glyph,name])=>'<a class="'+(page===url?'selected':'')+'" href="'+url+'">'+icon(glyph)+' '+html(name)+'</a>').join('');
+ const title=page==='/discord'?'Comunidades':page==='/moderacion'?'Moderación':'Vista general';
+ return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>'+html(title)+' · PESADILLA PVP</title><style>'+dashboardStyle+'</style></head><body><div class="shell"><aside class="side"><div class="brand"><div class="brand-icon">'+icon('skull')+'</div><div>PESADILLA PVP<small>BOT CONTROL CENTER</small></div></div><div class="nav-caption">ADMINISTRACIÓN</div><nav class="nav">'+menu+'</nav><div class="side-foot"><b>●</b> Panel protegido · Cloudflare</div></aside><div class="main-wrap"><header class="topbar"><div class="breadcrumb">PESADILLA PVP / <strong>'+html(title)+'</strong></div><div class="account"><span class="avatar">'+html((user.username||'?')[0].toUpperCase())+'</span><span>'+html(user.username)+'</span><a class="logout" href="/logout">Salir</a></div></header><main>'+(flash?'<div class="notice success">'+html(flash)+'</div>':'')+body+'<footer>PESADILLA PVP · Configuración sincronizada de forma segura · Solo administradores autorizados</footer></main></div></div></body></html>';
 }
 export async function controlPage(page,env,user,session,query=new URLSearchParams()){
  const csrf=await csrfForSession(session,env.SESSION_SECRET);
@@ -84,13 +88,8 @@ export async function controlPage(page,env,user,session,query=new URLSearchParam
    return renderPage(page,user,'<h1>Centro de configuración de Discord</h1><p>Configura los canales del bot, sus funciones y las acciones de moderación autorizadas. La gestión de partidas, espectador y roles de Roblox se realiza dentro del juego.</p><div class="cards"><div class="card"><strong>'+Number(configCount)+'</strong><p>Opciones guardadas</p><a href="/discord">Configurar Discord</a></div><div class="card"><strong>'+Number(count)+'</strong><p>Acciones de moderación pendientes</p><a href="/moderacion">Abrir moderación</a></div></div><div class="info">Los cambios de Discord se aplicarán al bot cuando su sincronizador esté conectado y configurado. Las acciones de moderación se marcan completadas solo tras la confirmación del servidor Roblox.</div>');
   }
   if(page==='/discord'){
-   const rows=(await env.DB.prepare('SELECT key,value,updated_at FROM discord_settings ORDER BY key').all()).results||[];
-   const values=Object.fromEntries(rows.map(x=>[x.key,x.value]));
-   const fields=Object.entries(KEYS).map(([key,label])=>'<label class="field">'+html(label)+' <span class="small">'+html(key)+'</span>'+
-     (booleanKeys.has(key)?'<select name="'+html(key)+'"><option value="false"'+(values[key]!=='true'?' selected':'')+'>Desactivado</option><option value="true"'+(values[key]==='true'?' selected':'')+'>Activado</option></select>':
-     '<input name="'+html(key)+'" maxlength="'+(key==='welcome.message'?'240':'30')+'" value="'+html(values[key]||'')+'" placeholder="'+(key==='welcome.message'?'Bienvenido a PESADILLA PVP': 'ID numérico de Discord')+'">')+'</label>').join('');
-   const note=ownerAllowed(env,user)?'<form method="post" action="/discord"><input type="hidden" name="csrf" value="'+csrf+'"><div class="grid">'+fields+'</div><p><button type="submit">Guardar configuración</button></p></form>':'<div class="info">Solo el propietario del dashboard puede modificar esta configuración.</div>';
-   return renderPage(page,user,'<h1>Configuración de Discord</h1><p>Canales, comunidad principal y de soporte, bienvenida, logs, tickets, eventos y funciones del bot. Las opciones solo tienen efecto cuando el bot las consume.</p><div class="card">'+note+'</div><div class="info">Los cambios de canales y bienvenida se sincronizan con el bot si está conectado. Las funciones con handlers aún pendientes no se habilitan mágicamente al cambiar un interruptor.</div>',query.get('saved')==='1'?'Configuración guardada correctamente.':null);
+   const body=await renderGuildSettings(env,csrf,query,ownerAllowed(env,user));
+   return renderPage(page,user,body);
   }
   if(page==='/moderacion'){
    const rows=(await env.DB.prepare('SELECT id,roblox_user_id,action,reason,actor_discord_id,status,requested_at_ms,result_message FROM dashboard_moderation ORDER BY id DESC LIMIT 50').all()).results||[];
@@ -116,15 +115,9 @@ export async function controlWrite(request,env,user,session,page){
   await setup(env);
   if(page==='/discord'){
    if(!ownerAllowed(env,user))return reply({ok:false,error:'forbidden'},403);
-   const inserts=[];
-   for(const [key] of Object.entries(KEYS)){
-    const value=form.get(key);
-    if(!validSetting(key,value))return reply({ok:false,error:'invalid_setting',key},400);
-    inserts.push(env.DB.prepare('INSERT INTO discord_settings(key,value,updated_by) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_by=excluded.updated_by,updated_at=CURRENT_TIMESTAMP').bind(key,value,user.id));
-   }
-   inserts.push(env.DB.prepare('INSERT INTO audit_logs(actor_discord_id,action,target_id,details_json) VALUES(?,?,?,?)').bind(user.id,'discord.config.update','discord',JSON.stringify({keys:Object.keys(KEYS)})));
-   await env.DB.batch(inserts);
-   return Response.redirect(new URL('/discord?saved=1',request.url),303);
+   const saved=await saveGuildSettings(env,user,form);
+   if(!saved.ok)return reply(saved,400);
+   return Response.redirect(new URL('/discord?guild='+encodeURIComponent(saved.guildId)+'&saved=1',request.url),303);
   }
   if(page==='/moderacion'){
    const target=form.get('robloxUserId'),action=form.get('action'),reason=form.get('reason')?.trim();
@@ -155,7 +148,8 @@ export async function controlService(request,env,url){
   await setup(env);
   if(isBot&&request.method==='GET'){
    const rows=(await env.DB.prepare('SELECT key,value FROM discord_settings ORDER BY key').all()).results||[];
-   return reply({ok:true,settings:Object.fromEntries(rows.map(r=>[r.key,r.value]))});
+   const guilds=await loadGuilds(env.DB);
+   return reply({ok:true,settings:Object.fromEntries(rows.map(r=>[r.key,r.value])),guildTypes:Object.fromEntries(guilds.map(g=>[g.kind,g.id]))});
   }
   if(path==='/api/ingest/moderation/poll'&&request.method==='GET'){
    const server=url.searchParams.get('serverJobId');
