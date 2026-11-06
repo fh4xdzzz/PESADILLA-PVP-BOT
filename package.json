@@ -1,13 +1,11 @@
 {
-  "name": "pesadilla-pvp-nuevo",
+  "name": "pesadilla-pvp-bot",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
+  "description": "PESADILLA PVP BOT — monorepo: web/ (Next.js en Vercel), bot/ (Sparked Host), supabase/ (PostgreSQL)",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "test": "node --test",
-    "check": "node --check src/index.js && node --check src/auth.js && node --check src/html.js && node --check src/roblox.js"
-  },
-  "devDependencies": {"wrangler":"^4.0.0"}
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "lint": "npm --prefix web run lint"
+  }
 }

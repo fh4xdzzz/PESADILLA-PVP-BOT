@@ -3,3 +3,6 @@ node_modules/
 .env
 .wrangler/
 .DS_Store
+
+# Devin local config
+.devin/mcp_config.local.json
