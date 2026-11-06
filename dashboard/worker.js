@@ -135,7 +135,7 @@ const sessionCookie=cookies(request).session;
 if(reportDetail && method==='GET')return response(await showReportDetail(env,user,reportDetail[1],sessionCookie));
 if(reportUpdate && method==='POST')return updateReport(request,env,user,reportUpdate[1],sessionCookie);
 if(path==='/api/summary')return Response.json({data:await stats(env),readOnly:true},{headers:{'Cache-Control':'no-store'}});
-if(!(path in titles) && !/^\/partidas\/[a-zA-Z0-9:_-]{1,100}$/.test(path))return response('No encontrado',404);
+if(!(path in titles) && !/^\/partidas\/[a-zA-Z0-9:_-]{1,100}$/.test(path) && !/^\/jugadores\/[1-9][0-9]{0,19}$/.test(path))return response('No encontrado',404);
 return response(await renderDashboard(path,env,user,u.searchParams));
 }
 };
