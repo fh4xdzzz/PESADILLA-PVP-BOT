@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && prisma db push --skip-generate",
     "start": "node index.js",
     "deploy-commands": "node src/deploy-commands.js"
   },
