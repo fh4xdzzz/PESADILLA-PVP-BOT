@@ -87,7 +87,7 @@ if(path==='/api/ingest/replay/claim' && method==='GET')return claimTheater(reque
 if(path.startsWith('/api/ingest/admin/'))return handleStaffAdmin(request,env,u);
 if(path==='/api/sync/discord'||path.startsWith('/api/ingest/moderation/'))return controlService(request,env,u);
 if(path==='/assets/replay-client.js' && method==='GET')return new Response(replayClientSource,{headers:{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}});
-if(method!=='GET' && !(method==='POST' && (path==='/discord'||path==='/moderacion'||path==='/api/ingest/replay/request'||/^\/reportes\/[a-zA-Z0-9:_-]{1,100}\/actualizar$/.test(path))))return response('Método no permitido',405,{'Allow':'GET, POST'});
+if(method!=='GET' && !(method==='POST' && (path==='/discord'||path==='/moderacion')))return response('Método no permitido',405,{'Allow':'GET, POST'});
 if(path==='/health')return Response.json({ok:true,service:'pesadilla-pvp-dashboard'});
 const origin=env.APP_BASE_URL;
 const missing=[];
@@ -140,17 +140,10 @@ if(['/', '/discord', '/moderacion'].includes(path)){
  if(method==='GET')return response(await controlPage(path,env,user,cookies(request).session,u.searchParams));
 }
 if(method==='GET' && (path==='/partidas'||path==='/jugadores'||path==='/reportes'||path==='/baneos'||path.startsWith('/partidas/')||path.startsWith('/jugadores/')||path.startsWith('/replays/')))return redirect('/');
-if(path==='/api/ingest/replay/request' && method==='POST')return requestTheater(request,env,user,u);
+// Web replay launch disabled; replay data ingestion remains for Roblox.
+
 // Reports are still ingested for the in-game ADMIN panel, but not displayed on this website.
-const replayRoute=path.match(/^\/replays\/([A-Za-z0-9:_-]{1,100})$/);
-if(replayRoute && method==='GET')return response(await replayPage(env,user,replayRoute[1]));
-const reportDetail=path.match(/^\/reportes\/([a-zA-Z0-9:_-]{1,100})$/);
-const reportUpdate=path.match(/^\/reportes\/([a-zA-Z0-9:_-]{1,100})\/actualizar$/);
-const sessionCookie=cookies(request).session;
-if(reportDetail && method==='GET')return response(await showReportDetail(env,user,reportDetail[1],sessionCookie));
-if(reportUpdate && method==='POST')return updateReport(request,env,user,reportUpdate[1],sessionCookie);
-if(path==='/api/summary')return Response.json({data:await stats(env),readOnly:true},{headers:{'Cache-Control':'no-store'}});
-if(!(path in titles) && !/^\/partidas\/[a-zA-Z0-9:_-]{1,100}$/.test(path) && !/^\/jugadores\/[1-9][0-9]{0,19}$/.test(path))return response('No encontrado',404);
-return response(await renderDashboard(path,env,user,u.searchParams));
+// No public-facing match, replay, report or analytics pages remain.
+return response('No encontrado',404);
 }
 };
