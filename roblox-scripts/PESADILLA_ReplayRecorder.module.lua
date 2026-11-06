@@ -15,13 +15,16 @@ local MAX_CHUNKS = 50
 local sessions = {}
 local uploading = {}
 local function round(n)
-    return math.floor(n * 10 + (n >= 0 and 0.5 or -0.5)) / 10
+    return math.round(n * 10) / 10
 end
 local function uid(value)
     if typeof(value) == "Instance" and value:IsA("Player") then
         return value.UserId
     end
     if typeof(value) == "number" then return value end
+    if typeof(value) == "table" then
+        return tonumber(value.userId or value.UserId)
+    end
     return nil
 end
 local function sample(session)
