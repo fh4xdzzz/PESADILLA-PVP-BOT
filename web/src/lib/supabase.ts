@@ -18,16 +18,12 @@ export function getSupabase(): SupabaseClient | null {
 export async function upsertDiscordUser(user: DiscordUser): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
-  const { error } = await supabase.from("discord_users").upsert(
-    {
-      discord_user_id: user.id,
-      username: user.username,
-      global_name: user.global_name ?? null,
-      avatar_hash: user.avatar ?? null,
-      locale: user.locale ?? null,
-      last_seen_at: new Date().toISOString(),
-    },
-    { onConflict: "discord_user_id" }
-  );
+  const { error } = await supabase.rpc("upsert_discord_user", {
+    p_discord_user_id: user.id,
+    p_username: user.username,
+    p_global_name: user.global_name ?? null,
+    p_avatar_hash: user.avatar ?? null,
+    p_locale: user.locale ?? null,
+  });
   if (error) throw new Error(`supabase_upsert_failed:${error.message}`);
 }
