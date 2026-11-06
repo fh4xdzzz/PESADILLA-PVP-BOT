@@ -20,17 +20,27 @@ async function syncDashboardSettings(){
   const json=await response.json();
   if(!json||json.ok!==true||typeof json.settings!=='object'||!json.settings)throw Error('invalid_response');
   const settings=json.settings;
-  // Do not reset existing settings when dashboard has not been configured.
+  const guildTypes=json.guildTypes||{};
+  // The dashboard knows which actual Discord server is the main/support one.
+  if(/^\d+$/.test(String(guildTypes.main||'')))config.discord.mainGuildId=String(guildTypes.main);
+  if(/^\d+$/.test(String(guildTypes.support||'')))config.discord.supportGuildId=String(guildTypes.support);
   const source=Object.keys(settings).sort().map(k=>[k,settings[k]]);
-  const hash=JSON.stringify(source);
+  const hash=JSON.stringify([source,config.discord.mainGuildId,config.discord.supportGuildId]);
   if(hash===lastHash)return true;
   const prefix=/^(channel\.[a-z-]+|guild\.(main|support)|welcome\.(enabled|message)|feature\.(tickets|giveaways|polls|events|automod|logs))$/;
+  const scoped=/^guild\.(\d+)\.(channel\.[a-z-]+|role\.[a-z-]+|welcome\.(enabled|message)|feature\.(tickets|giveaways|polls|events|automod|logs))$/;
   for(const [key,value] of source){
-   if(!prefix.test(key)||typeof value!=='string')continue;
-   if((await getSetting(key))!==value)await setSetting(key,value,'dashboard-sync');
+   if(typeof value!=='string')continue;
+   const m=key.match(scoped);
+   if(m){
+    if((await getSetting(key))!==value)await setSetting(key,value,'dashboard-sync');
+    // Old commands reference non-scoped keys. Keep main guild compatible.
+    if(m[1]===config.discord.mainGuildId && (await getSetting(m[2]))!==value)
+      await setSetting(m[2],value,'dashboard-sync');
+   }else if(prefix.test(key)&& (await getSetting(key))!==value){
+    await setSetting(key,value,'dashboard-sync');
+   }
   }
-  if(settings['guild.main'])config.discord.mainGuildId=settings['guild.main'];
-  if(settings['guild.support'])config.discord.supportGuildId=settings['guild.support'];
   lastHash=hash;
   log.info({count:source.length},'Configuración Discord sincronizada desde dashboard');
   return true;
