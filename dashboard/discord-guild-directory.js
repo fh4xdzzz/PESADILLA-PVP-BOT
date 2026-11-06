@@ -36,7 +36,7 @@ export async function receiveGuildDirectory(request,env){
  try{
   await ensureGuildDirectory(env.DB);
   const now=Date.now();
-  if(clean.length)await env.DB.batch(clean.map(g=>env.DB.prepare("INSERT INTO discord_guild_directory(guild_id,name,kind,channels_json,roles_json,member_count,updated_at_ms) VALUES(?,?,?,?,?,?,?) ON CONFLICT(guild_id) DO UPDATE SET name=excluded.name,kind=CASE WHEN discord_guild_directory.kind='other' THEN excluded.kind ELSE discord_guild_directory.kind END,channels_json=excluded.channels_json,roles_json=excluded.roles_json,member_count=excluded.member_count,updated_at_ms=excluded.updated_at_ms").bind(g.id,g.name,g.kind,JSON.stringify(g.channels),JSON.stringify(g.roles),g.members,now)));
+  if(clean.length)await env.DB.batch(clean.map(g=>env.DB.prepare("INSERT INTO discord_guild_directory(guild_id,name,kind,channels_json,roles_json,member_count,updated_at_ms) VALUES(?,?,?,?,?,?,?) ON CONFLICT(guild_id) DO UPDATE SET name=excluded.name,kind=discord_guild_directory.kind,channels_json=excluded.channels_json,roles_json=excluded.roles_json,member_count=excluded.member_count,updated_at_ms=excluded.updated_at_ms").bind(g.id,g.name,g.kind,JSON.stringify(g.channels),JSON.stringify(g.roles),g.members,now)));
   return json({ok:true,received:clean.length});
  }catch(e){console.error('discord guild sync failed',String(e?.message||'').slice(0,100));return json({ok:false,error:'database_error'},500);}
 }
