@@ -3,7 +3,7 @@
 const UID=/^[1-9]\d{0,19}$/;
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const names=new Set(['main','support','other']);
-const channelKinds=new Set([0,2,4,5,13,15]); // text, voice, categories, announcements, stage, forum
+const channelKinds=new Set([0,2,4,5,13,15,16]); // text, voice, categories, announcements, stage, forum
 const safeName=v=>typeof v==='string'&&v.length<=100&&!/[\u0000-\u001f]/.test(v);
 export async function ensureGuildDirectory(db){
  await db.prepare("CREATE TABLE IF NOT EXISTS discord_guild_directory(guild_id TEXT PRIMARY KEY,name TEXT NOT NULL,kind TEXT NOT NULL DEFAULT 'other',channels_json TEXT NOT NULL,roles_json TEXT NOT NULL,member_count INTEGER NOT NULL DEFAULT 0,updated_at_ms INTEGER NOT NULL)").run();
