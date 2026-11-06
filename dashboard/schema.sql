@@ -49,3 +49,20 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 CREATE INDEX IF NOT EXISTS idx_matches_started ON matches(started_at);
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_sanctions_target ON sanctions(target_user_id);
+
+-- 3D PvP replays: compact server-authoritative snapshots grouped by match/chunk.
+-- Historical matches without a recorder do not contain replay frames.
+CREATE TABLE IF NOT EXISTS replay_meta (
+  match_id TEXT PRIMARY KEY,
+  total_chunks INTEGER NOT NULL DEFAULT 0,
+  duration REAL NOT NULL DEFAULT 0,
+  finished INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS replay_chunks (
+  match_id TEXT NOT NULL,
+  chunk_index INTEGER NOT NULL,
+  frames_json TEXT NOT NULL,
+  PRIMARY KEY(match_id, chunk_index)
+);
+CREATE INDEX IF NOT EXISTS idx_replay_created ON replay_meta(created_at);
