@@ -1,5 +1,16 @@
 # PESADILLA PVP — Dashboard gratuito (Cloudflare Workers + D1)
 
+## Portal de acceso y dashboard (fase inicial)
+
+La ruta `/` muestra una pantalla de bienvenida para visitantes que no han iniciado sesión. El botón **Continuar con Discord** utiliza el OAuth2 real que ya existe en `/login` y `/auth/callback`. Cuando la sesión HMAC es válida y el ID está autorizado en `DASHBOARD_ADMIN_IDS`, se muestra el centro de control con los datos reales de D1 y los servidores sincronizados.
+
+Esta fase únicamente moderniza la experiencia visual del acceso y la portada del panel. No añade funciones nuevas, no cambia los endpoints de Roblox, ni altera los permisos de moderación. Las opciones siguientes del bot se incorporarán de forma independiente después de definirlas.
+
+Antes de publicar comprueba en Cloudflare que `APP_BASE_URL`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DASHBOARD_ADMIN_IDS`, `SESSION_SECRET` y el binding `DB` están configurados. En Discord Developer Portal registra el redirect URI exacto `<APP_BASE_URL>/auth/callback`. Guarda las credenciales únicamente en los secretos de Cloudflare, no en GitHub.
+
+Ejecuta `node --test dashboard/tests/*.test.js` desde la raíz del repositorio para verificar el portal junto con las pruebas de moderación y sincronización existentes.
+
+
 Panel web inicial en una rama separada. **No modifica ni reinicia** el bot que está en SparkedHost. Coste obligatorio de hosting: **US$0 si se mantiene dentro de los límites gratuitos de Cloudflare**. Los límites de uso pueden suspender temporalmente el acceso cuando se alcanzan.
 
 ## Estado actual
