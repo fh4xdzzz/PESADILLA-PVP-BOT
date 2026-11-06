@@ -19,7 +19,7 @@ if not remote then
     remote.Parent = ReplicatedStorage
 end
 
-local lastCalls = {}
+local lastCalls = {} -- Keep separate rate limits by action so metadata does not block chunk 0.
 local activeMatch = {}
 local function authorized(player)
     return (ALLOW_STUDIO_TEST and RunService:IsStudio()) or ADMIN_USER_IDS[player.UserId] == true
@@ -27,7 +27,7 @@ end
 
 local function getFromDashboard(kind, matchId, index)
     local uri = WORKER .. "/" .. kind .. "?matchId=" .. HttpService:UrlEncode(matchId)
-    if kind == "chunk" then
+    if kind == "chunk" or kind == "events" then
         uri ..= "&index=" .. tostring(index)
     end
     local ok, result = pcall(function()
@@ -39,9 +39,18 @@ local function getFromDashboard(kind, matchId, index)
             }
         })
     end)
-    if not ok then return {ok = false, error = "http_request_failed"} end
+    if not ok then
+        warn("[ReplayAccess] Error HTTPS " .. tostring(kind) .. ": " .. tostring(result))
+        return {ok = false, error = "http_request_failed"}
+    end
     if not result.Success then
-        return {ok = false, error = "dashboard_" .. tostring(result.StatusCode)}
+        local reason = "dashboard_" .. tostring(result.StatusCode)
+        local decodedOk, body = pcall(function() return HttpService:JSONDecode(result.Body) end)
+        if decodedOk and typeof(body) == "table" and typeof(body.error) == "string" then
+            reason = reason .. "_" .. body.error
+        end
+        warn("[ReplayAccess] " .. tostring(kind) .. " fallo: " .. reason)
+        return {ok = false, error = reason}
     end
     local parsedOk, response = pcall(function() return HttpService:JSONDecode(result.Body) end)
     if not parsedOk or typeof(response) ~= "table" then return {ok = false, error = "invalid_response"} end
@@ -63,10 +72,15 @@ remote.OnServerInvoke = function(player, action, matchId, chunkIndex)
 
     local now = os.clock()
     local interval = action == "meta" and 1 or 0.15
-    if now - (lastCalls[player] or -100) < interval then
-        return {ok = false, error = "too_many_requests"}
+    local prior = lastCalls[player]
+    if not prior then
+        prior = {}
+        lastCalls[player] = prior
     end
-    lastCalls[player] = now
+    if now - (prior[action] or -100) < interval then
+        return {ok = false, error = "too_many_requests_" .. action}
+    end
+    prior[action] = now
     if action == "meta" then
         local result = getFromDashboard("meta", matchId)
         if result.ok then activeMatch[player] = matchId end
