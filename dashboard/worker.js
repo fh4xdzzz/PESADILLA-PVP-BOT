@@ -33,15 +33,33 @@ if(path==='/login') {const state=base64url(crypto.getRandomValues(new Uint8Array
 if(path==='/auth/callback') {
 const c=cookies(request),state=u.searchParams.get('state'),code=u.searchParams.get('code');
 if(!state||!code||!c.oauth_state||state!==c.oauth_state)return response('OAuth inválido. Inicia sesión de nuevo.',403,{'Set-Cookie':secureCookie('oauth_state','',0)});
+let stage='token';
+let diagnostic='unexpected';
 try {
 const tokenResponse=await fetch('https://discord.com/api/v10/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.DISCORD_CLIENT_ID,client_secret:env.DISCORD_CLIENT_SECRET,grant_type:'authorization_code',code,redirect_uri:redirectUri})});
-if(!tokenResponse.ok)throw Error('No se pudo validar OAuth');
-const token=await tokenResponse.json();const profileResponse=await fetch('https://discord.com/api/v10/users/@me',{headers:{Authorization:`Bearer ${token.access_token}`}});if(!profileResponse.ok)throw Error('No se pudo obtener el perfil');const profile=await profileResponse.json();
+if(!tokenResponse.ok) {
+  let type='unknown';try {const data=await tokenResponse.json();if(typeof data.error==='string' && /^[a-z_]{1,50}$/.test(data.error))type=data.error;}catch{}
+  diagnostic=`token_${tokenResponse.status}_${type}`;
+  throw Error('OAuth token exchange failed');
+}
+const token=await tokenResponse.json();
+if(!token || typeof token.access_token!=='string'){diagnostic='token_missing_access_token';throw Error('OAuth response missing token');}
+stage='profile';
+const profileResponse=await fetch('https://discord.com/api/v10/users/@me',{headers:{Authorization:`Bearer ${token.access_token}`}});
+if(!profileResponse.ok){diagnostic=`profile_${profileResponse.status}`;throw Error('Discord profile request failed');}
+const profile=await profileResponse.json();
+if(!profile || !/^\\d+$/.test(String(profile.id))){diagnostic='profile_invalid_id';throw Error('Invalid Discord user');}
 const admins=env.DASHBOARD_ADMIN_IDS.split(',').map(x=>x.trim());
-if(!admins.includes(profile.id))return response('No tienes acceso al panel.',403,{'Set-Cookie':secureCookie('oauth_state','',0)});
+if(!admins.includes(profile.id))return response('Tu cuenta Discord no está autorizada para este panel.',403,{'Set-Cookie':secureCookie('oauth_state','',0)});
+stage='session';
 const payload=base64url(encoder.encode(JSON.stringify({id:profile.id,username:profile.global_name||profile.username,exp:Date.now()+8*60*60*1000})));
 const signed=`${payload}.${await hmac(payload,env.SESSION_SECRET)}`;const h=new Headers({Location:'/', 'Cache-Control':'no-store'});h.append('Set-Cookie',secureCookie('session',signed,28800));h.append('Set-Cookie',secureCookie('oauth_state','',0));return new Response(null,{status:302,headers:h});
-}catch{return response('Error de autenticación. Inténtalo nuevamente.',502,{'Set-Cookie':secureCookie('oauth_state','',0)});}
+}catch {
+const safeCode=stage==='session'?'session_error':diagnostic==='unexpected'?`${stage}_unexpected`:diagnostic;
+// Never log OAuth codes, tokens, private secrets or raw Discord responses.
+console.error('Discord OAuth failure:',safeCode);
+return response(`No se pudo completar el inicio de sesión (diagnóstico: ${safeCode}). Regresa al dashboard y vuelve a pulsar Entrar con Discord.`,502,{'Set-Cookie':secureCookie('oauth_state','',0)});
+}
 }
 if(path==='/logout')return redirect('/login',secureCookie('session','',0));
 const user=await verify(cookies(request).session,env.SESSION_SECRET);
