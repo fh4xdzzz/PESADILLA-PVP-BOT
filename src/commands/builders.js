@@ -5,8 +5,8 @@ const moderationBuilders = [
     .setName('rban')
     .setDescription('[STAFF] Banea un usuario de la experiencia Roblox')
     .addStringOption((o) => o.setName('usuario').setDescription('Username o UserId de Roblox').setRequired(true))
-    .addStringOption((o) => o.setName('duracion').setDescription('Temporal: 30m, 12h, 7d, 2w — vacío = permanente').setRequired(false))
     .addStringOption((o) => o.setName('motivo').setDescription('Motivo público').setRequired(true))
+    .addStringOption((o) => o.setName('duracion').setDescription('Temporal: 30m, 12h, 7d, 2w — vacío = permanente').setRequired(false))
     .addStringOption((o) => o.setName('evidencia').setDescription('Enlace/captura').setRequired(false))
     .addStringOption((o) => o.setName('nota_privada').setDescription('Nota privada').setRequired(false))
     .addBooleanOption((o) => o.setName('propagar_alts').setDescription('[ADMIN] Propagar a cuentas alternativas').setRequired(false)),
