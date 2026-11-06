@@ -24,6 +24,7 @@ return layout(title,`<h1>${title}</h1><p>${desc[path]}</p>${main}<div class="not
 export default {
 async fetch(request,env) {
 const u=new URL(request.url), path=u.pathname, method=request.method;
+if(path==='/api/ingest/match' && method==='POST') return handleMatchIngest(request,env);
 if(method!=='GET')return response('Método no permitido',405,{'Allow':'GET'});
 if(path==='/health')return Response.json({ok:true,service:'pesadilla-pvp-dashboard'});
 const origin=env.APP_BASE_URL;
