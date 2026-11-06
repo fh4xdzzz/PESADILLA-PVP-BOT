@@ -71,3 +71,27 @@ export async function getReplay(env,id) {
   return {matchId:id,duration:Number(meta.duration),complete,frames,chunkCount:rows.length,expectedChunks:meta.total_chunks};
  }catch(e){console.error('Replay read failed',String(e?.message||'').slice(0,120));return {error:'database_error',status:500};}
 }
+
+
+// Roblox server-only read endpoints; the secret never crosses RemoteFunction to a client.
+export async function readReplayForRoblox(request,env,url){
+ if(!env.DB||typeof env.ROBLOX_INGEST_SECRET!=='string'||env.ROBLOX_INGEST_SECRET.length<32)return reply({error:'not_configured'},503);
+ if(request.headers.get('authorization')!=='Bearer '+env.ROBLOX_INGEST_SECRET)return reply({error:'unauthorized'},401);
+ const id=url.searchParams.get('matchId');
+ if(!matchIdOk(id))return reply({error:'invalid_match_id'},400);
+ try{
+  await replaySchema(env);
+  const meta=await env.DB.prepare('SELECT match_id,total_chunks,duration,finished FROM replay_meta WHERE match_id=?').bind(id).first();
+  if(!meta)return reply({error:'not_recorded'},404);
+  if(url.pathname.endsWith('/meta')){
+   return reply({matchId:id,duration:Number(meta.duration),totalChunks:Number(meta.total_chunks),complete:Boolean(meta.finished)});
+  }
+  const raw=url.searchParams.get('index');
+  if(!/^(0|[1-9]\d*)$/.test(raw||''))return reply({error:'invalid_index'},400);
+  const index=Number(raw);
+  if(index>=Number(meta.total_chunks)||index>49)return reply({error:'index_out_of_range'},400);
+  const row=await env.DB.prepare('SELECT frames_json FROM replay_chunks WHERE match_id=? AND chunk_index=?').bind(id,index).first();
+  if(!row)return reply({error:'chunk_not_recorded'},404);
+  return reply({matchId:id,index,frames:JSON.parse(row.frames_json)});
+ }catch(e){console.error('Roblox replay read failed',String(e?.message||'').slice(0,120));return reply({error:'database_error'},500);}
+}
