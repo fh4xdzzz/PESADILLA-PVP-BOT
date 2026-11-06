@@ -1,78 +1,75 @@
-# PESADILLA PVP BOT
+# PESADILLA PVP — Proyecto nuevo, desde cero
 
-Bot de Discord para administrar el servidor de **PESADILLA PVP** alojado en [SparkedHost](https://sparkedhost.com) (panel Apollo/Pterodactyl en `control.sparkedhost.us`), con integración opcional a **Roblox Open Cloud** (Data Stores).
+> **Proyecto reiniciado desde cero.** El código actual contiene solamente el login con Discord, el dashboard personal y la consulta/vinculación de perfiles Roblox. No reutiliza la web anterior, su Worker, sus endpoints, su base de datos ni sus secretos. Las versiones antiguas solo permanecen en el historial de Git y en ramas anteriores, no en el árbol de archivos de `main`.
 
-## Comandos
+## Paso 1 — Base vacía + login Discord
 
-| Comando | Descripción |
-|---|---|
-| `/power <start\|stop\|restart\|kill>` | Controla el estado del servidor |
-| `/stats` | CPU, RAM, disco, red, uptime y estado |
-| `/console send <comando>` | Envía un comando a la consola del servidor |
-| `/console logs [líneas]` | Lee las últimas líneas de la consola |
-| `/file read <ruta>` | Lee un archivo del servidor |
-| `/file write <ruta> <contenido>` | Escribe/crea un archivo |
-| `/file list [directorio]` | Lista archivos de un directorio |
-| `/datastore get/set/list` | Data Stores de Roblox vía Open Cloud |
+La primera versión tiene únicamente una web de inicio, login oficial con Discord OAuth2 (`identify`), sesión firmada HttpOnly, mini dashboard personal, consulta de perfiles públicos de Roblox y la opción de conectar tu propia cuenta de Roblox por OAuth2. **No hay bot de Discord todavía, ni comandos ni administración de servidores.** Los agregaremos poco a poco.
 
-Todos los comandos requieren estar en `ADMIN_USER_IDS` del `.env`.
+La búsqueda de perfiles públicos no demuestra la propiedad de una cuenta. Para verificar que un usuario controla su Roblox, **cada usuario debe autorizar la vinculación**. No es posible conectar automáticamente la cuenta de todos los usuarios sin su consentimiento.
 
-## Setup
+### 1. Crear aplicaciones (sin compartir secretos)
 
-### 1. Bot de Discord
+- Discord Developer Portal → Applications → crear la aplicación y copiar **Application ID** y **Client Secret** (OAuth2).
+- Añadir en Discord → OAuth2 → Redirects: `https://TU-NUEVO-DOMINIO/auth/discord`.
+- Si deseas la vinculación verificada, crear credenciales OAuth2 en Roblox Creator Dashboard y registrar el redirect `https://TU-NUEVO-DOMINIO/auth/roblox` con scopes `openid profile`.
 
-1. Ve a [Discord Developer Portal](https://discord.com/developers/applications) → **New Application**.
-2. En **Bot** → **Reset Token** y copia el token → `DISCORD_TOKEN`.
-3. Copia el **Application ID** → `DISCORD_CLIENT_ID`.
-4. Invita el bot a tu servidor con este scope (reemplaza `CLIENT_ID`):
-
-   ```
-   https://discord.com/oauth2/authorize?client_id=CLIENT_ID&scope=bot%20applications.commands
-   ```
-
-5. Tu ID de usuario de Discord (clic derecho en tu perfil → Copiar ID, con modo desarrollador activado) va en `ADMIN_USER_IDS`.
-
-### 2. SparkedHost (Apollo Panel)
-
-1. Entra a [control.sparkedhost.us](https://control.sparkedhost.us) → **API Credentials** → crea una API key.
-2. Copia la key → `SPARKEDHOST_API_KEY`.
-3. El `SPARKEDHOST_SERVER_ID` es el UUID o identifier de tu servidor (aparece en la URL del panel, ej. `/server/<id>`).
-
-### 3. Roblox Open Cloud (opcional, para `/datastore`)
-
-1. En [create.roblox.com/dashboard/credentials](https://create.roblox.com/dashboard/credentials) crea una API key con scope de tu experience/universe.
-2. `ROBLOX_API_KEY` = la key, `ROBLOX_UNIVERSE_ID` = el ID numérico de tu universo.
-
-### 4. Ejecutar
+### 2. Ejecutar el Worker localmente
 
 ```bash
 npm install
-cp .env.example .env   # completa los valores
-npm start
+cp .env.example .dev.vars
+npm run dev
 ```
 
-Los slash commands se registran automáticamente al iniciar el bot. Si quieres forzarlo manualmente:
+Editar `.dev.vars` con los valores reales. Para pruebas locales `APP_BASE_URL=http://localhost:8787` y registrar ese callback exacto en Discord si el proveedor lo admite. Para producción utiliza **HTTPS**.
+
+### 3. Publicar la nueva web
 
 ```bash
-npm run deploy-commands
+npx wrangler login
+npm run deploy
 ```
 
-Si `DISCORD_GUILD_ID` está definido, los comandos aparecen al instante en ese servidor. Si no, se registran globalmente y pueden tardar hasta ~1 hora en estar disponibles.
+Utiliza este repositorio y rama en un Worker **nuevo**, no en el Worker anterior. En Cloudflare → Worker → Settings → Variables and Secrets, añade `APP_BASE_URL` (URL exacta, sin barra final), `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` y `SESSION_SECRET` (32+ caracteres aleatorios). Los secretos nunca van al repositorio. Los redirect URIs deben coincidir exactamente con `APP_BASE_URL`.
 
-## Estructura
+### 4. Habilitar vinculación Roblox con una D1 nueva
 
-```
-src/
-  index.js          # cliente de Discord + registro de comandos
-  commands.js       # definiciones de slash commands
-  handlers.js       # lógica de cada comando
-  sparkedhost.js    # cliente de la API de Apollo Panel (power, resources, files, websocket)
-  roblox.js         # cliente de Roblox Open Cloud (Data Stores)
-  config.js         # lectura de .env
-  deploy-commands.js# registro manual de comandos
+```bash
+npx wrangler d1 create pesadilla-pvp-users-nuevo
 ```
 
-## Notas
+Copia el `database_id` que aparece y añade al archivo `wrangler.jsonc` la sección:
 
-- La consola en vivo usa el websocket de Wings (`{"event":"auth"}` + `send command` / `send logs`).
-- Los archivos `.rbxl`/`.rbxm` del place **no** se gestionan por esta API de archivos del servidor de juego — esto controla el servidor dedicado (si tu juego en SparkedHost es un servidor de Minecraft/Rust/etc.). Si tu "servidor" es la experiencia de Roblox en sí, avísame y ajustamos la integración.
+```json
+"d1_databases": [{"binding":"DB","database_name":"pesadilla-pvp-users-nuevo","database_id":"ID_CREADO"}]
+```
+
+Después crea la tabla, configura `ROBLOX_OAUTH_CLIENT_ID` y `ROBLOX_OAUTH_CLIENT_SECRET` en los secretos del Worker y despliega de nuevo:
+
+```bash
+npx wrangler d1 execute pesadilla-pvp-users-nuevo --remote --file=schema.sql
+npm run deploy
+```
+
+La búsqueda de perfiles públicos funciona sin D1. La vinculación verificada requiere OAuth2 + D1.
+
+### 5. Pruebas
+
+```bash
+npm run check
+npm test
+```
+
+## Rutas iniciales
+
+- `/` — Página de entrada
+- `/login/discord` y `/auth/discord` — OAuth de Discord
+- `/dashboard` — Sesión privada, perfil y búsqueda pública Roblox
+- `/login/roblox` y `/auth/roblox` — Vinculación verificada voluntaria
+- `/logout` — Fin de sesión
+- `/health` — Estado del nuevo servicio
+
+## Después
+
+Se añadirán las opciones del bot y del dashboard **solo cuando el propietario decida qué funciones quiere**. Esta primera fase no accede a los datos de la experiencia Roblox ni a servidores Discord por sí sola.
