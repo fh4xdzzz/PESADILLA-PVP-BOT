@@ -25,6 +25,7 @@ jobs:
           node --check dashboard/replay-client.js
           node --check dashboard/replay-view.js
           node --check dashboard/replay-theater.js
+          node --check dashboard/staff-roles.js
           node --check dashboard/reports.js
       - name: Report system tests
         run: node --test dashboard/tests/*.test.js
