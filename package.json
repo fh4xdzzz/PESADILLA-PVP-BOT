@@ -1,24 +1,13 @@
 {
-  "name": "pesadilla-pvp-bot",
-  "version": "2.0.0",
-  "description": "Bot oficial de PESADILLA PVP - Discord + Roblox Open Cloud",
-  "type": "commonjs",
-  "engines": {
-    "node": ">=20"
-  },
+  "name": "pesadilla-pvp-nuevo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "postinstall": "sh scripts/fix-handler-paths.sh && prisma generate && prisma db push --skip-generate",
-    "start": "node index.js",
-    "deploy-commands": "node src/deploy-commands.js"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test",
+    "check": "node --check src/index.js && node --check src/auth.js && node --check src/html.js && node --check src/roblox.js"
   },
-  "dependencies": {
-    "@discordjs/rest": "^2.4.0",
-    "@prisma/client": "^6.0.0",
-    "discord.js": "^14.16.3",
-    "dotenv": "^16.4.5",
-    "pino": "^9.5.0",
-    "pino-pretty": "^11.3.0",
-    "prisma": "^6.0.0",
-    "zod": "^3.23.8"
-  }
+  "devDependencies": {"wrangler":"^4.0.0"}
 }
