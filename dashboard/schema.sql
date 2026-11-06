@@ -78,3 +78,11 @@ CREATE TABLE IF NOT EXISTS replay_event_chunks (
   events_json TEXT NOT NULL,
   PRIMARY KEY(match_id, chunk_index)
 );
+
+-- Replay Theater: single-use launch requests for an authorized Roblox account.
+CREATE TABLE IF NOT EXISTS replay_launch_requests (
+ roblox_user_id TEXT PRIMARY KEY,
+ match_id TEXT NOT NULL,
+ created_at_ms INTEGER NOT NULL,
+ claimed_at_ms INTEGER
+);
