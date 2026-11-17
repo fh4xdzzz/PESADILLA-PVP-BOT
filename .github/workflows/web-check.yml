@@ -1,0 +1,36 @@
+name: Verificar web
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/web-check.yml"
+  push:
+    branches:
+      - "feat/pesadilla-bot-panel-v2"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: TypeScript y Next.js build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9d # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Preparar Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Compilar
+        run: npm run build
