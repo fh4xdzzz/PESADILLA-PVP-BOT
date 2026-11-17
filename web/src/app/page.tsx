@@ -119,7 +119,7 @@ export default function Home() {
         </section>
       </main>
       <footer className="site-footer">
-        <div className="site-container footer-inner"><span className="footer-brand">PESADILLA <strong>BOT</strong></span><p>Hecho para la comunidad PESADILLA PVP.</p><span>© {new Date().getFullYear()} PESADILLA PVP</span></div>
+        <div className="site-container footer-inner"><span className="footer-brand">PESADILLA <strong>BOT</strong></span><p>Hecho para la comunidad PESADILLA PVP.</p><span>© PESADILLA PVP</span></div>
       </footer>
     </div>
   );
