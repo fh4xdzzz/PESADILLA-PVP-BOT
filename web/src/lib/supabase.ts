@@ -2,19 +2,29 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { optionalEnv } from "./env";
 import type { DiscordUser } from "./discord";
 
-let client: SupabaseClient | null = null;
+let publicClient: SupabaseClient | null = null;
+let adminClient: SupabaseClient | null = null;
 
-export function getSupabase(): SupabaseClient | null {
+/** Server-side only. Never import in a client component. */
+export function getAdminSupabase(): SupabaseClient | null {
   const url = optionalEnv("SUPABASE_URL");
-  // Prefer the service role key; fall back to a publishable key (works with the
-  // RLS policies defined in supabase/migrations). Both stay server-only.
-  const key = optionalEnv("SUPABASE_SERVICE_ROLE_KEY") ?? optionalEnv("SUPABASE_PUBLISHABLE_KEY");
+  const key = optionalEnv("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !key) return null;
-  if (!client) client = createClient(url, key, { auth: { persistSession: false } });
-  return client;
+  if (!adminClient) adminClient = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return adminClient;
 }
 
-/** Upserts the Discord identity after a successful OAuth login. Server-only. */
+/** Compatibility fallback for earlier deployments. New admin APIs require getAdminSupabase. */
+export function getSupabase(): SupabaseClient | null {
+  const admin = getAdminSupabase();
+  if (admin) return admin;
+  const url = optionalEnv("SUPABASE_URL");
+  const key = optionalEnv("SUPABASE_PUBLISHABLE_KEY");
+  if (!url || !key) return null;
+  if (!publicClient) publicClient = createClient(url, key, { auth: { persistSession: false } });
+  return publicClient;
+}
+
 export async function upsertDiscordUser(user: DiscordUser): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
@@ -25,5 +35,5 @@ export async function upsertDiscordUser(user: DiscordUser): Promise<void> {
     p_avatar_hash: user.avatar ?? null,
     p_locale: user.locale ?? null,
   });
-  if (error) throw new Error(`supabase_upsert_failed:${error.message}`);
+  if (error) throw new Error("supabase_upsert_failed:" + error.message);
 }

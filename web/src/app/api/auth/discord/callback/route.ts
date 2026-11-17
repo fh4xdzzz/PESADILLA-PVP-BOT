@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { exchangeDiscordCode, fetchDiscordUser } from "@/lib/discord";
 import { createSessionValue } from "@/lib/session";
 import { upsertDiscordUser } from "@/lib/supabase";
-
+import { saveDiscordAuthorization } from "@/lib/discord-authorization";
 
 function fail(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
   const state = url.searchParams.get("state");
   const cookieState = request.cookies.get("oauth_state")?.value;
   const iss = url.searchParams.get("iss");
-
   if (!code || !state || !cookieState || state !== cookieState) {
     return fail("Invalid OAuth state", 403);
   }
@@ -23,13 +22,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const accessToken = await exchangeDiscordCode(code);
-    const discordUser = await fetchDiscordUser(accessToken);
-
+    const token = await exchangeDiscordCode(code);
+    const discordUser = await fetchDiscordUser(token.access_token);
+    // Database errors must not crash the identity login; server management will
+    // show an actionable error until the migrations and environment are ready.
     try {
       await upsertDiscordUser(discordUser);
-    } catch {
-      // Session still works if Supabase is unreachable; do not block login.
+      await saveDiscordAuthorization(discordUser.id, token);
+    } catch (error) {
+      console.error("discord_oauth_persistence_failed", error instanceof Error ? error.message : "unknown");
     }
 
     const response = NextResponse.redirect(new URL("/dashboard", request.url));
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     response.cookies.delete("oauth_state");
     return response;
   } catch (error) {
-    console.error("discord_oauth_callback_failed", error);
+    console.error("discord_oauth_callback_failed", error instanceof Error ? error.message : "unknown");
     return fail("Discord login failed", 502);
   }
 }

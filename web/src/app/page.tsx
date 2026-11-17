@@ -1,86 +1,126 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { isDiscordConfigured } from "@/lib/env";
 
-function DiscordIcon() {
+function Mark({ small = false }: { small?: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
-      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
-    </svg>
+    <span className={small ? "brand-symbol brand-symbol-small" : "brand-symbol"} aria-hidden="true">
+      <svg viewBox="0 0 48 48" fill="none" role="img">
+        <path d="M24 4 42 14v20L24 44 6 34V14L24 4Z" stroke="currentColor" strokeWidth="2.5" />
+        <path d="M16 32V16h11c5 0 8 3 8 8s-3 8-8 8H16Zm8-12v8h3a4 4 0 0 0 0-8h-3Z" fill="currentColor" />
+      </svg>
+    </span>
   );
 }
 
-async function SessionGate() {
-  const session = await getCurrentUser();
-  if (session) redirect("/dashboard");
-  const configured = isDiscordConfigured();
-
+async function AuthActions({ compact = false }: { compact?: boolean }) {
+  const user = await getCurrentUser();
+  if (user) {
+    return (
+      <Link href="/dashboard" className={compact ? "nav-cta" : "hero-button hero-button-primary"}>
+        <span>Ir a mi panel</span><span aria-hidden="true">↗</span>
+      </Link>
+    );
+  }
+  if (!isDiscordConfigured()) {
+    return <span className={compact ? "nav-disabled" : "login-unavailable"}>Inicio de sesión pendiente</span>;
+  }
   return (
-    <div className="animate-fade-up">
-      {configured ? (
-        <a
-          href="/api/auth/discord"
-          className="animate-pulse-glow inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[#5865F2] to-[#4752c4] px-10 py-4 text-lg font-bold text-white transition-transform hover:scale-[1.03] active:scale-[0.98]"
-        >
-          <DiscordIcon />
-          LOGIN WITH DISCORD
-        </a>
-      ) : (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-6 py-4 text-amber-200">
-          El inicio de sesión con Discord aún no está configurado en este despliegue.
-        </div>
-      )}
-    </div>
+    <a href="/api/auth/discord" className={compact ? "nav-cta" : "hero-button hero-button-primary"}>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="21" height="21" aria-hidden="true">
+        <path d="M19.7 5.2a18.3 18.3 0 0 0-4.5-1.4l-.6 1.2a17 17 0 0 0-5.2 0l-.6-1.2a18.3 18.3 0 0 0-4.5 1.4C1.5 9.3.8 13.4 1.2 17.5a18.1 18.1 0 0 0 5.5 2.8l1.1-1.8c-.6-.2-1.2-.5-1.8-.8l.4-.3c3.5 1.7 7.7 1.7 11.2 0l.4.3c-.6.3-1.2.6-1.8.8l1.1 1.8a18.1 18.1 0 0 0 5.5-2.8c.5-4.7-.8-8.7-3.1-12.3ZM8.4 15.1c-1 0-1.9-.9-1.9-2s.8-2 1.9-2c1 0 1.9.9 1.9 2s-.9 2-1.9 2Zm7.2 0c-1 0-1.9-.9-1.9-2s.9-2 1.9-2 1.9.9 1.9 2-.9 2-1.9 2Z"/>
+      </svg>
+      <span>Iniciar sesión con Discord</span>
+    </a>
   );
 }
+
+const modules = [
+  { icon: "🛡", label: "01 / PROTECCIÓN", title: "Moderación", desc: "Organiza las reglas, el antispam y las acciones de moderación desde un solo lugar." },
+  { icon: "👋", label: "02 / COMUNIDAD", title: "Bienvenidas", desc: "Prepara mensajes personalizados para recibir a cada miembro nuevo." },
+  { icon: "🎫", label: "03 / SOPORTE", title: "Tickets", desc: "Diseña el sistema de atención y soporte de tu comunidad." },
+  { icon: "📋", label: "04 / CONTROL", title: "Registros", desc: "Configura dónde se enviarán los registros de actividad del servidor." },
+  { icon: "⚙", label: "05 / AJUSTES", title: "Configuración", desc: "Modifica tus preferencias sin editar archivos ni reiniciar tu panel." },
+  { icon: "🔒", label: "06 / ACCESO", title: "Permisos", desc: "Solo los miembros con permisos de administración podrán modificar la configuración." },
+];
 
 export default function Home() {
   return (
-    <main className="relative flex flex-1 items-center justify-center px-6 py-24">
-      <div className="w-full max-w-2xl text-center">
-        <div className="animate-fade-up">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-blood-soft">
-            Zona de batalla
-          </p>
-          <h1 className="text-5xl font-black tracking-tight sm:text-7xl">
-            PESADILLA
-            <span className="bg-gradient-to-r from-blood via-rose-500 to-void bg-clip-text text-transparent">
-              {" "}
-              PVP
-            </span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-md text-lg text-zinc-400">
-            El panel oficial de la comunidad. Inicia sesión con Discord para entrar a tu dashboard.
-          </p>
-        </div>
-
-        <div className="mt-12 min-h-16">
-          <Suspense fallback={<div className="h-14 w-64 animate-pulse rounded-2xl bg-white/5 mx-auto" />}>
-            <SessionGate />
+    <div className="landing">
+      <header className="site-header">
+        <div className="site-container nav-inner">
+          <Link className="brand-lockup" href="/" aria-label="PESADILLA BOT inicio">
+            <Mark small />
+            <span><strong>PESADILLA</strong><em>BOT</em></span>
+          </Link>
+          <nav className="nav-links" aria-label="Navegación principal">
+            <a href="#inicio">Inicio</a>
+            <a href="#funciones">Funciones</a>
+            <a href="#como-funciona">Cómo funciona</a>
+            <Link href="/dashboard">Dashboard</Link>
+          </nav>
+          <Suspense fallback={<span className="nav-disabled">Cargando...</span>}>
+            <AuthActions compact />
           </Suspense>
         </div>
+      </header>
 
-        <div
-          className="animate-fade-up mt-16 grid grid-cols-1 gap-4 text-left sm:grid-cols-3"
-          style={{ animationDelay: "0.3s" }}
-        >
-          {[
-            ["01", "Entra con Discord", "Autenticación oficial y segura."],
-            ["02", "Tu panel personal", "Perfil, sesión y ajustes de tu cuenta."],
-            ["03", "Vincula Roblox", "Próximamente: conecta tu cuenta de Roblox."],
-          ].map(([n, title, desc]) => (
-            <div
-              key={n}
-              className="rounded-2xl border border-white/5 bg-panel/80 p-5 backdrop-blur"
-            >
-              <p className="font-mono text-xs text-blood-soft">{n}</p>
-              <p className="mt-2 font-semibold">{title}</p>
-              <p className="mt-1 text-sm text-zinc-400">{desc}</p>
+      <main>
+        <section className="hero-section" id="inicio">
+          <div className="hero-orb hero-orb-one" aria-hidden="true"/>
+          <div className="hero-orb hero-orb-two" aria-hidden="true"/>
+          <div className="site-container hero-content">
+            <div className="eyebrow"><span className="eyebrow-dot" /> EL CENTRO DE CONTROL DE TU COMUNIDAD</div>
+            <div className="hero-emblem"><Mark /><span className="emblem-ring" /></div>
+            <p className="hero-kicker">EL PODER ESTÁ EN TUS MANOS</p>
+            <h1 className="hero-title">PESADILLA<span>BOT</span></h1>
+            <p className="hero-subtitle">Tu servidor. Tus reglas. Una nueva forma de administrar, proteger y hacer crecer tu comunidad de Discord.</p>
+            <div className="hero-actions">
+              <Suspense fallback={<span className="hero-button hero-button-primary">Preparando acceso...</span>}>
+                <AuthActions />
+              </Suspense>
+              <a className="hero-button hero-button-secondary" href="#funciones">Explorar funciones <span aria-hidden="true">↓</span></a>
             </div>
-          ))}
-        </div>
-      </div>
-    </main>
+            <div className="hero-footnote"><span className="footnote-line"/> PANEL DE CONTROL DE PESADILLA PVP <span className="footnote-line"/></div>
+          </div>
+        </section>
+
+        <section className="feature-section" id="funciones">
+          <div className="site-container">
+            <div className="section-heading">
+              <div><p className="section-tag">DISEÑADO PARA ADMINISTRADORES</p><h2>Todo bajo tu <span>control.</span></h2></div>
+              <p>Un panel pensado para que configurar tu bot sea tan fácil como pulsar un botón. Los módulos se conectarán al bot progresivamente.</p>
+            </div>
+            <div className="feature-grid">
+              {modules.map((feature) => (
+                <article className="feature-card" key={feature.title}>
+                  <span className="feature-icon" aria-hidden="true">{feature.icon}</span>
+                  <span className="feature-label">{feature.label}</span>
+                  <h3>{feature.title}</h3><p>{feature.desc}</p>
+                  <span className="feature-corner" aria-hidden="true">↗</span>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="steps-section" id="como-funciona">
+          <div className="site-container">
+            <p className="section-tag">SIMPLE. RÁPIDO. SEGURO.</p>
+            <h2>Tu panel en <span>tres pasos.</span></h2>
+            <div className="steps-grid">
+              <div><span>01</span><h3>Conecta Discord</h3><p>Inicia sesión con tu cuenta oficial de Discord, sin compartir tu contraseña.</p></div>
+              <div><span>02</span><h3>Elige tu servidor</h3><p>Selecciona un servidor en el que tengas permisos para administrar.</p></div>
+              <div><span>03</span><h3>Guarda tus ajustes</h3><p>Personaliza tus módulos desde el panel. El bot aplicará los ajustes al integrar su sincronización.</p></div>
+            </div>
+            <Link href="/dashboard" className="hero-button hero-button-secondary">Abrir dashboard <span aria-hidden="true">↗</span></Link>
+          </div>
+        </section>
+      </main>
+      <footer className="site-footer">
+        <div className="site-container footer-inner"><span className="footer-brand">PESADILLA <strong>BOT</strong></span><p>Hecho para la comunidad PESADILLA PVP.</p><span>© {new Date().getFullYear()} PESADILLA PVP</span></div>
+      </footer>
+    </div>
   );
 }
