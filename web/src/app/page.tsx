@@ -36,6 +36,17 @@ async function AuthActions({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function InviteBot() {
+  const clientId = process.env.DISCORD_CLIENT_ID;
+  if (!clientId) return null;
+  const params = new URLSearchParams({
+    client_id: clientId,
+    scope: "bot applications.commands",
+    permissions: "93200",
+  });
+  return <a className="hero-button hero-button-secondary" href={"https://discord.com/oauth2/authorize?" + params.toString()}>Añadir bot a Discord <span aria-hidden="true">↗</span></a>;
+}
+
 const modules = [
   { icon: "🛡", label: "01 / PROTECCIÓN", title: "Moderación", desc: "Organiza las reglas, el antispam y las acciones de moderación desde un solo lugar." },
   { icon: "👋", label: "02 / COMUNIDAD", title: "Bienvenidas", desc: "Prepara mensajes personalizados para recibir a cada miembro nuevo." },
@@ -80,6 +91,7 @@ export default function Home() {
               <Suspense fallback={<span className="hero-button hero-button-primary">Preparando acceso...</span>}>
                 <AuthActions />
               </Suspense>
+              <InviteBot />
               <a className="hero-button hero-button-secondary" href="#funciones">Explorar funciones <span aria-hidden="true">↓</span></a>
             </div>
             <div className="hero-footnote"><span className="footnote-line"/> PANEL DE CONTROL DE PESADILLA PVP <span className="footnote-line"/></div>

@@ -68,6 +68,7 @@ function ServerBadge({ server }: { server: Server }) {
 export default function DashboardClient({ user }: { user: Viewer }) {
   const [servers, setServers] = useState<Server[]>([]);
   const [serverId, setServerId] = useState("");
+  const [botOnline, setBotOnline] = useState<boolean | null>(null);
   const [loadingServers, setLoadingServers] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -127,6 +128,25 @@ export default function DashboardClient({ user }: { user: Viewer }) {
       }
     })();
     return () => abort.abort();
+  }, [serverId]);
+
+  useEffect(() => {
+    if (!serverId) { setBotOnline(null); return; }
+    let active = true;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/servers/" + encodeURIComponent(serverId) + "/status", { cache: "no-store" });
+        if (!response.ok) throw new Error("Bot status not available");
+        const data = await response.json();
+        if (active) setBotOnline(data.online === true);
+      } catch {
+        if (active) setBotOnline(null);
+      }
+    };
+    setBotOnline(null);
+    void load();
+    const timer = setInterval(() => { void load(); }, 60_000);
+    return () => { active = false; clearInterval(timer); };
   }, [serverId]);
 
   const server = useMemo(() => servers.find((item) => item.id === serverId), [serverId, servers]);
@@ -210,7 +230,7 @@ export default function DashboardClient({ user }: { user: Viewer }) {
 
           <div className="db-integration-note">
             <span className="db-note-dot"/>
-            <p><strong>Configuración y bot independientes.</strong> Los ajustes se guardan en Supabase, pero todavía hay que conectar el proceso del bot en Sparked Host para que se apliquen en Discord.</p>
+            <p><strong>Sincronización preparada.</strong> Tras configurar Supabase, Vercel y desplegar el nuevo proceso en Sparked Host, el bot aplicará los cambios automáticamente. Si aparece desconectado, comprueba su instalación.</p>
           </div>
 
           {loadingServers && <div className="db-empty">Buscando los servidores que puedes administrar...</div>}
@@ -231,7 +251,7 @@ export default function DashboardClient({ user }: { user: Viewer }) {
                   <div className="db-stats-grid">
                     <article className="db-stat"><span>01 / SERVIDOR</span><strong>{server.name}</strong><p>{server.owner ? "Eres propietario" : "Tienes permiso para administrar"}</p></article>
                     <article className="db-stat"><span>02 / PREFERENCIAS</span><strong>{moduleCount} / 4</strong><p>Módulos marcados para activar</p></article>
-                    <article className="db-stat"><span>03 / SINCRONIZACIÓN</span><strong className="db-warn-text">Pendiente</strong><p>Integración del bot por completar</p></article>
+                    <article className="db-stat"><span>03 / SINCRONIZACIÓN</span><strong className={botOnline ? "db-online-text" : "db-warn-text"}>{botOnline === true ? "Conectado" : botOnline === false ? "Sin conexión" : "Sin datos"}</strong><p>{botOnline === true ? "El bot está enviando su estado a la web" : "Comprueba el despliegue y las credenciales del bot"}</p></article>
                   </div>
                   <div className="db-panel"><div className="db-panel-heading"><div><p className="db-panel-tag">TU CONFIGURACIÓN</p><h2>Empieza por aquí</h2><span>Accede a los módulos desde el menú lateral.</span></div></div>
                     <div className="db-quick-grid">
@@ -286,6 +306,9 @@ export default function DashboardClient({ user }: { user: Viewer }) {
                     checked={settings.ticketsEnabled} onChange={(value) => patch("ticketsEnabled", value)}/>
                   <FormField label="ID del canal para tickets" help="Copia el ID del canal desde Discord."
                     value={settings.ticketsChannelId} onChange={(value) => patch("ticketsChannelId", value)}/>
+                  <FormField label="ID del rol de soporte (opcional)" help="Los miembros de este rol podrán ver y responder tickets. Los administradores también pueden acceder."
+                    placeholder="ID del rol" value={settings.ticketStaffRoleId} onChange={(value) => patch("ticketStaffRoleId", value)}/>
+                  <p className="db-help">Después de guardar, un administrador puede escribir <code>/ticket-panel</code> en Discord para publicar el botón de soporte.</p>
                 </div>
               )}
 

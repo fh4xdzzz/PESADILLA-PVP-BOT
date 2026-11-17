@@ -1,0 +1,32 @@
+name: Verificar bot
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "bot/**"
+      - ".github/workflows/bot-check.yml"
+  push:
+    branches:
+      - "feat/pesadilla-bot-panel-v2"
+    paths:
+      - "bot/**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Sintaxis y pruebas del bot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+      - name: Validar sintaxis
+        run: |
+          for file in bot/src/*.js; do node --check "$file"; done
+      - name: Ejecutar pruebas sin secretos
+        run: node --test bot/tests/*.test.js
