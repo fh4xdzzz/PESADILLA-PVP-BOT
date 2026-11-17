@@ -78,7 +78,7 @@ export async function getManageableGuilds(userId: string): Promise<DiscordGuild[
   return guilds.filter((guild) => {
     try {
       const permissions = BigInt(guild.permissions);
-      return guild.owner === true || (permissions & 8n) !== 0n || (permissions & 32n) !== 0n;
+      return guild.owner === true || (permissions & BigInt(8)) !== 0n || (permissions & BigInt(32)) !== 0n;
     } catch {
       return false;
     }
