@@ -5,6 +5,7 @@ import {
 
 const NEW_TICKET = "pesadilla:ticket:new";
 const CLOSE_TICKET = "pesadilla:ticket:close";
+const openingTickets = new Set();
 const staffPerm = PermissionFlagsBits.ManageGuild;
 
 async function respond(interaction, message) {
@@ -83,6 +84,13 @@ export async function handleTicketInteraction(interaction, settingsSync, sendLog
     return true;
   }
 
+  const lockKey = interaction.guildId + ":" + interaction.user.id;
+  if (openingTickets.has(lockKey)) {
+    await respond(interaction, "Ya estamos creando tu ticket. Comprueba los canales abiertos.");
+    return true;
+  }
+  openingTickets.add(lockKey);
+  try {
   // Defer before API calls to avoid Discord's 3-second response limit.
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const tag = "pesadilla:ticket:" + interaction.user.id;
@@ -145,4 +153,7 @@ export async function handleTicketInteraction(interaction, settingsSync, sendLog
   await interaction.editReply("Tu ticket está listo: <#" + channel.id + ">");
   await sendLog(interaction.guild, cfg, "Ticket abierto por " + interaction.user.id + " en #" + channel.name);
   return true;
+  } finally {
+    openingTickets.delete(lockKey);
+  }
 }

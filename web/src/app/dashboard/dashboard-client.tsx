@@ -263,7 +263,7 @@ export default function DashboardClient({ user }: { user: Viewer }) {
 
               {active === "general" && (
                 <div className="db-panel">
-                  <div className="db-panel-heading"><div><p className="db-panel-tag">PREFERENCIAS</p><h2>Idioma del bot</h2><span>El idioma que utilizará el bot cuando se conecte la sincronización.</span></div></div>
+                  <div className="db-panel-heading"><div><p className="db-panel-tag">PREFERENCIAS</p><h2>Idioma del bot</h2><span>Preferencia guardada para futuras traducciones de mensajes del bot.</span></div></div>
                   <label className="db-field"><span>Idioma preferido</span>
                     <select value={settings.language} onChange={(event) => patch("language", event.target.value as "es" | "en")}>
                       <option value="es">Español</option><option value="en">English</option>

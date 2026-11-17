@@ -28,5 +28,9 @@ jobs:
       - name: Validar sintaxis
         run: |
           for file in bot/src/*.js; do node --check "$file"; done
+      - name: Instalar discord.js sin scripts
+        run: npm install --prefix bot --ignore-scripts --no-fund --no-audit
+      - name: Comprobar import de discord.js
+        run: cd bot && node -e "import('discord.js').then(() => console.log('discord.js OK'))"
       - name: Ejecutar pruebas sin secretos
         run: node --test bot/tests/*.test.js
