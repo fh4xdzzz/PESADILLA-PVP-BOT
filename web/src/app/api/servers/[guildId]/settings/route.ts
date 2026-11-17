@@ -4,8 +4,6 @@ import { getManageableGuilds } from "@/lib/discord-authorization";
 import { getAdminSupabase } from "@/lib/supabase";
 import { DEFAULT_GUILD_SETTINGS, validateGuildSettings } from "@/lib/guild-settings";
 
-export const dynamic = "force-dynamic";
-
 type Context = { params: Promise<{ guildId: string }> };
 
 async function authenticateGuild(context: Context) {
