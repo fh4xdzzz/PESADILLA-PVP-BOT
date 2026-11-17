@@ -1,6 +1,8 @@
--- Panel PESADILLA PVP BOT v2: un servidor solo puede configurarse desde
--- el backend tras comprobar sus permisos actuales en Discord.
--- Estas tablas NO exponen políticas a anon ni authenticated.
+-- Base real PESADILLA BOT: la función upsert_discord_user existente acepta
+-- SEIS parámetros (el primero es p_secret), y mantiene su validación segura
+-- contra private.server_secrets. No modificarla ni revocar sus permisos.
+-- La función antigua de CINCO parámetros, si existiera en otros despliegues,
+-- no debe seguir siendo invocable desde la API pública.
 create table if not exists public.discord_oauth_tokens (
   discord_user_id text primary key references public.discord_users(discord_user_id) on delete cascade,
   access_token_ciphertext text not null,
@@ -19,6 +21,15 @@ create table if not exists public.guild_configs (
 );
 alter table public.guild_configs enable row level security;
 
--- El antiguo RPC anon permitía escribir perfiles arbitrarios si se conocía
--- la clave pública. La nueva versión usa exclusivamente service role en el servidor.
-revoke execute on function public.upsert_discord_user(text, text, text, text, text) from anon, authenticated;
+revoke all on table public.discord_oauth_tokens, public.guild_configs
+  from public, anon, authenticated;
+grant select, insert, update, delete on
+  public.discord_oauth_tokens, public.guild_configs to service_role;
+
+do $migration$
+begin
+  if to_regprocedure('public.upsert_discord_user(text,text,text,text,text)') is not null then
+    execute 'revoke all on function public.upsert_discord_user(text,text,text,text,text) from public, anon, authenticated';
+  end if;
+end
+$migration$;

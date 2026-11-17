@@ -26,14 +26,39 @@ export function getSupabase(): SupabaseClient | null {
 }
 
 export async function upsertDiscordUser(user: DiscordUser): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase) return;
-  const { error } = await supabase.rpc("upsert_discord_user", {
+  const profile = {
+    discord_user_id: user.id,
+    username: user.username,
+    global_name: user.global_name ?? null,
+    avatar_hash: user.avatar ?? null,
+    locale: user.locale ?? null,
+    last_seen_at: new Date().toISOString(),
+  };
+
+  // Prefer the private service role, without requiring an exposed SECURITY DEFINER RPC.
+  const admin = getAdminSupabase();
+  if (admin) {
+    const { error } = await admin.from("discord_users").upsert(profile, {
+      onConflict: "discord_user_id",
+    });
+    if (error) throw new Error("discord_user_upsert_failed:" + error.code);
+    return;
+  }
+
+  // Backward compatibility: the existing Supabase database uses a six-argument
+  // RPC requiring a secret stored only in Vercel. Never pass it to a client component.
+  const rpcSecret = optionalEnv("SUPABASE_RPC_SECRET");
+  const client = getSupabase();
+  if (!client || !rpcSecret) {
+    throw new Error("supabase_server_credentials_missing");
+  }
+  const { error } = await client.rpc("upsert_discord_user", {
+    p_secret: rpcSecret,
     p_discord_user_id: user.id,
     p_username: user.username,
     p_global_name: user.global_name ?? null,
     p_avatar_hash: user.avatar ?? null,
     p_locale: user.locale ?? null,
   });
-  if (error) throw new Error("supabase_upsert_failed:" + error.message);
+  if (error) throw new Error("supabase_upsert_failed:" + error.code);
 }
